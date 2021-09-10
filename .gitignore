@@ -1,4 +1,4 @@
 target
 pkg
 node_modules
-.sw[op]
+*.sw[op]
