@@ -5,8 +5,23 @@ edition = "2018"
 description = "A sample project with wasm-pack"
 license = "MIT/Apache-2.0"
 
-[lib]
+[lib.'cfg(not(target_arch = "wasm32"))']
+name = "cyd"
+path = "src/lib.rs"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+pleco = "0.5.0"
+
+[lib.'cfg(target_arch = "wasm32")']
 crate-type = ["cdylib"]
 
-[dependencies]
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 wasm-bindgen = "0.2"
+pleco = "0.5.0"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "search"
+harness = false
