@@ -8,6 +8,7 @@ mod evaluate;
 mod search;
 
 pub use search::search;
+pub use evaluate::eval;
 
 #[cfg(target_arch="wasm32")]
 #[wasm_bindgen]
