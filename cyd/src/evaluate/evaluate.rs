@@ -37,6 +37,14 @@ fn piece_square_table(board: &Board) -> f32 {
 }
 
 pub fn eval(board: &Board) -> f32 {
+    if board.checkmate() {
+        let turn: f32 = match &board.turn() {
+            Player::White => 1.0,
+            Player::Black => -1.0,
+        };
+        return -turn * (9999.0 - board.ply() as f32);
+    }
+
     let material = material_count(board);
     let psq = piece_square_table(board);
     material + 0.1 * psq
@@ -74,5 +82,17 @@ mod eval_test {
     fn psq_start_pos() {
         let board = Board::start_pos();
         assert_eq!(0., piece_square_table(&board))
+    }
+
+    #[test]
+    fn checkmate_white() {
+        let board = Board::from_fen("4R2k/6pp/8/2p5/6n1/5B2/4PPPP/2K4R b - - 0 1").unwrap();
+        assert_eq!(9999.0, eval(&board));
+    }
+
+    #[test]
+    fn checkmate_black() {
+        let board = Board::from_fen("3k4/8/8/8/8/8/P7/K1q5 w - - 0 1").unwrap();
+        assert_eq!(-9999.0, eval(&board));
     }
 }

@@ -1,23 +1,43 @@
 extern crate cyd;
-use cyd::search;
+use cyd::{alpha_beta, nega_max};
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use pleco::{Board, Player};
 
-fn bench_search_start_pos(c: &mut Criterion) {
+fn bench_nega_max_start_pos(c: &mut Criterion) {
     let board = Board::start_pos();
-    c.bench_function("search depth 1 start position", |b| {
-        b.iter(|| search(board.clone(), 1, Player::White))
-    });
-
-    c.bench_function("search depth 2 start position", |b| {
-        b.iter(|| search(board.clone(), 2, Player::White))
-    });
-    
-    c.bench_function("search depth 3 start position", |b| {
-        b.iter(|| search(board.clone(), 3, Player::White))
-    });
+    for depth in 1..4 {
+        c.bench_function(
+            format!("nega_max depth {} start position", depth).as_str(),
+            |b| b.iter(|| nega_max(board.clone(), depth, Player::White)),
+        );
+    }
 }
 
-criterion_group!(benches, bench_search_start_pos);
+fn bench_alpha_beta_start_pos(c: &mut Criterion) {
+    let board = Board::start_pos();
+    for depth in 1..4 {
+        c.bench_function(
+            format!("nega_max depth {} start position", depth).as_str(),
+            |b| b.iter(|| alpha_beta(board.clone(), depth, Player::White, -9999.0, 9999.0)),
+        );
+    }
+}
+
+fn bench_alpha_beta_queen_take(c: &mut Criterion) {
+    let board = Board::from_fen("3k4/ppp1b3/5q2/5p2/8/8/1BB1PPPP/3K4 w - - 0 1").unwrap();
+    for depth in 1..4 {
+        c.bench_function(
+            format!("nega_max depth {} start position", depth).as_str(),
+            |b| b.iter(|| alpha_beta(board.clone(), depth, Player::White, -9999.0, 9999.0)),
+        );
+    }
+}
+
+criterion_group!(
+    benches,
+    bench_nega_max_start_pos,
+    bench_alpha_beta_start_pos
+);
+
 criterion_main!(benches);
