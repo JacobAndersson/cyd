@@ -9,7 +9,7 @@ fn color_value(player: Player) -> f32 {
     };
 }
 
-#[allow(dead_code)]
+#[allow(dead_code)] //For benchmarks
 pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
     if depth == 0 {
         return (BitMove::null(), color_value(color) * eval(&board));
