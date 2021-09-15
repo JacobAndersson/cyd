@@ -4,7 +4,7 @@ use cyd::{alpha_beta, nega_max};
 use criterion::{criterion_group, criterion_main, Criterion};
 use pleco::{Board, Player};
 
-fn bench_nega_max_start_pos(c: &mut Criterion) {
+fn nega_max_start_pos(c: &mut Criterion) {
     let board = Board::start_pos();
     for depth in 1..4 {
         c.bench_function(
@@ -14,7 +14,7 @@ fn bench_nega_max_start_pos(c: &mut Criterion) {
     }
 }
 
-fn bench_alpha_beta_start_pos(c: &mut Criterion) {
+fn alpha_beta_start_pos(c: &mut Criterion) {
     let board = Board::start_pos();
     for depth in 1..4 {
         c.bench_function(
@@ -24,7 +24,7 @@ fn bench_alpha_beta_start_pos(c: &mut Criterion) {
     }
 }
 
-fn bench_alpha_beta_queen_take(c: &mut Criterion) {
+fn alpha_beta_queen_take(c: &mut Criterion) {
     let board = Board::from_fen("3k4/ppp1b3/5q2/5p2/8/8/1BB1PPPP/3K4 w - - 0 1").unwrap();
     for depth in 1..4 {
         c.bench_function(
@@ -34,11 +34,35 @@ fn bench_alpha_beta_queen_take(c: &mut Criterion) {
     }
 }
 
+fn play_game(mut board: Board, depth: u8) {
+    while !board.checkmate() && board.rule_50() != 50 && !board.stalemate() && board.is_ok_quick() {
+        let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999., 9999.);
+
+        if (mv.stringify() == "a1a1") {
+            println!("{}", board);
+            println!("{}, {:?}", board.is_ok_quick(), board.is_okay());
+            println!("{}", board.fen());
+        }
+        board.apply_move(mv);
+    }
+}
+
+fn play_through_game(c: &mut Criterion) {
+    let board = Board::start_pos();
+    for depth in 2..6 {
+        c.bench_function(
+            format!("Play through Alpha beta depth {}", depth).as_str(),
+            |b| b.iter(|| play_game(board.clone(), depth)),
+        );
+    }
+}
+
 criterion_group!(
     benches,
-    bench_nega_max_start_pos,
-    bench_alpha_beta_start_pos,
-    bench_alpha_beta_queen_take
+    nega_max_start_pos,
+    alpha_beta_start_pos,
+    alpha_beta_queen_take,
+    play_through_game
 );
 
 criterion_main!(benches);
