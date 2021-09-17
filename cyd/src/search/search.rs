@@ -4,12 +4,11 @@ use std::collections::HashMap;
 
 const DELTA_PRUNING_DIFF: f32 = 200.;
 
-
 #[derive(PartialEq)]
 enum EntryFlag {
     Exact,
     LowerBound,
-    UpperBound
+    UpperBound,
 }
 
 pub struct TtEntry {
@@ -18,8 +17,6 @@ pub struct TtEntry {
     flag: EntryFlag,
     value: f32,
 }
-
-
 
 fn color_value(player: Player) -> f32 {
     return match player {
@@ -98,7 +95,7 @@ pub fn alpha_beta(
     color: Player,
     mut alpha: f32,
     mut beta: f32,
-    tt_table: &mut HashMap<u64, TtEntry>
+    tt_table: &mut HashMap<u64, TtEntry>,
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
     let zobrist = board.zobrist();
@@ -116,13 +113,12 @@ pub fn alpha_beta(
                     beta = beta.min(tt_entry.value);
                 }
                 if alpha >= beta {
-                    return (tt_entry.mv, tt_entry.value)
+                    return (tt_entry.mv, tt_entry.value);
                 }
             }
-        }, 
+        }
         None => {}
     }
-
 
     if depth == 0 || board.checkmate() || moves.is_empty() {
         return (BitMove::null(), quiesce(board, 10, color, alpha, beta));
@@ -137,7 +133,7 @@ pub fn alpha_beta(
             color.other_player(),
             -beta,
             -alpha,
-            tt_table
+            tt_table,
         );
         board.undo_move();
         score = -score;
@@ -167,7 +163,7 @@ pub fn alpha_beta(
         mv: best_move.clone(),
         depth,
         flag,
-        value
+        value,
     };
     tt_table.insert(zobrist, entry);
 
@@ -199,7 +195,8 @@ mod search_test {
         for _i in 0..plies {
             let mut tt: HashMap<u64, TtEntry> = HashMap::new();
 
-            let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999.0, 9999.0, &mut tt);
+            let (mv, _score) =
+                alpha_beta(board.clone(), depth, board.turn(), -9999.0, 9999.0, &mut tt);
             board.apply_move(mv)
         }
         board

@@ -8,12 +8,10 @@ use std::collections::HashMap;
 fn nega_max_start_pos(c: &mut Criterion) {
     let board = Board::start_pos();
 
-
     for depth in 1..4 {
         c.bench_function(
             format!("nega_max depth {} start position", depth).as_str(),
-            |b| b.iter(|| nega_max(board.clone(), depth, Player::White)
-            ),
+            |b| b.iter(|| nega_max(board.clone(), depth, Player::White)),
         );
     }
 }
@@ -23,10 +21,19 @@ fn alpha_beta_start_pos(c: &mut Criterion) {
     for depth in 1..4 {
         c.bench_function(
             format!("alpha beta depth {} start position", depth).as_str(),
-            |b| b.iter(|| {
-                let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
-                alpha_beta(board.clone(), depth, Player::White, -9999.0, 9999.0, &mut tt)
-            }),
+            |b| {
+                b.iter(|| {
+                    let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
+                    alpha_beta(
+                        board.clone(),
+                        depth,
+                        Player::White,
+                        -9999.0,
+                        9999.0,
+                        &mut tt,
+                    )
+                })
+            },
         );
     }
 }
@@ -36,10 +43,19 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
     for depth in 1..4 {
         c.bench_function(
             format!("alpha beta depth {} take queen", depth).as_str(),
-            |b| b.iter(|| {
-                let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
-                alpha_beta(board.clone(), depth, Player::White, -9999.0, 9999.0, &mut tt)
-            }),
+            |b| {
+                b.iter(|| {
+                    let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
+                    alpha_beta(
+                        board.clone(),
+                        depth,
+                        Player::White,
+                        -9999.0,
+                        9999.0,
+                        &mut tt,
+                    )
+                })
+            },
         );
     }
 }
