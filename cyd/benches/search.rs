@@ -1,7 +1,7 @@
 extern crate cyd;
 use cyd::{alpha_beta, nega_max};
 
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, Criterion};
 use pleco::{Board, Player};
 
 fn nega_max_start_pos(c: &mut Criterion) {
@@ -37,12 +37,6 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
 fn play_game(mut board: Board, depth: u8) {
     while !board.checkmate() && board.rule_50() != 50 && !board.stalemate() && board.is_ok_quick() {
         let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999., 9999.);
-
-        if (mv.stringify() == "a1a1") {
-            println!("{}", board);
-            println!("{}, {:?}", board.is_ok_quick(), board.is_okay());
-            println!("{}", board.fen());
-        }
         board.apply_move(mv);
     }
 }
@@ -58,11 +52,9 @@ fn play_through_game(c: &mut Criterion) {
 }
 
 criterion_group!(
-    benches,
+    search_benches,
     nega_max_start_pos,
     alpha_beta_start_pos,
     alpha_beta_queen_take,
     play_through_game
 );
-
-criterion_main!(benches);
