@@ -1,5 +1,4 @@
 use crate::evaluate::eval;
-
 use pleco::{BitMove, Board, Player};
 
 fn color_value(player: Player) -> f32 {
@@ -33,6 +32,42 @@ pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
     (best_move, max)
 }
 
+fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32) -> f32 {
+    let standpat = color_value(color) * eval(&board);
+    if depth == 0 {
+        return standpat;
+    } else if standpat >= beta {
+        return beta;
+    } else if alpha < standpat {
+        alpha = standpat;
+    }
+
+    let moves = board.generate_moves();
+    for mv in moves {
+        //Should be possible to only generate capturing moves. Problem with check
+        if !board.is_capture(mv) {
+            continue;
+        }
+
+        board.apply_move(mv);
+        let score = -quiesce(
+            board.shallow_clone(),
+            depth - 1,
+            color.other_player(),
+            -beta,
+            -alpha,
+        );
+        board.undo_move();
+
+        if score >= beta {
+            return beta;
+        } else if score > alpha {
+            alpha = score;
+        }
+    }
+    return alpha;
+}
+
 pub fn alpha_beta(
     mut board: Board,
     depth: u8,
@@ -40,12 +75,14 @@ pub fn alpha_beta(
     mut alpha: f32,
     beta: f32,
 ) -> (BitMove, f32) {
-    if depth == 0 {
-        return (BitMove::null(), color_value(color) * eval(&board));
+    let moves = board.generate_moves();
+
+    if depth == 0 || board.checkmate() || moves.is_empty() {
+        return (BitMove::null(), quiesce(board, 10, color, alpha, beta));
     }
 
     let mut best_move = BitMove::null();
-    for mv in board.generate_moves() {
+    for mv in moves {
         board.apply_move(mv);
         let (_, mut score) = alpha_beta(
             board.shallow_clone(),
@@ -85,6 +122,15 @@ mod search_test {
         let (mv, score) = alpha_beta(board, depth, player, -9999.0, 9999.0);
         println!("depth: {}, move: {}, score: {}", depth, mv, score);
         correct_move == mv.stringify()
+    }
+
+    fn play_x_moves(fen: &str, depth: u8, plies: u8) -> Board {
+        let mut board = Board::from_fen(fen).unwrap();
+        for _i in 0..plies {
+            let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999.0, 9999.0);
+            board.apply_move(mv)
+        }
+        board
     }
 
     #[test]
@@ -146,6 +192,45 @@ mod search_test {
         for depth in 4..5 {
             let find = test_position_alpha_beta(fen, depth, Player::White, correct_move);
             assert!(find);
+        }
+    }
+
+    #[test]
+    fn mate_in_one_white() {
+        let fen = "k7/5R2/6R1/8/8/8/4K3/8 w - - 0 1";
+        let correct_move = "g6g8";
+
+        for depth in 1..4 {
+            let find = test_position_alpha_beta(fen, depth, Player::White, correct_move);
+            assert!(find);
+        }
+    }
+
+    #[test]
+    fn mate_in_one_black() {
+        let fen = "1k6/8/8/8/8/3n4/6PR/6RK b Q - 0 1";
+        let correct_move = "d3f2";
+        for depth in 1..4 {
+            let find = test_position_nega_max(fen, depth, Player::Black, correct_move);
+            assert!(find);
+        }
+    }
+
+    #[test]
+    fn mate_in_two_white() {
+        let fen = "k7/4R3/8/8/8/4R3/8/3K4 w - - 0 1";
+        for depth in 4..6 {
+            let board = play_x_moves(fen, depth, 3);
+            assert!(board.checkmate());
+        }
+    }
+
+    #[test]
+    fn mate_in_two_2() {
+        let fen = "k7/4R3/2p5/p7/1p6/2P1R2P/1P4P1/3K4 w - - 0 1";
+        for depth in 4..6 {
+            let board = play_x_moves(fen, depth, 3);
+            assert!(board.checkmate());
         }
     }
 }
