@@ -3,13 +3,17 @@ use cyd::{alpha_beta, nega_max};
 
 use criterion::{criterion_group, Criterion};
 use pleco::{Board, Player};
+use std::collections::HashMap;
 
 fn nega_max_start_pos(c: &mut Criterion) {
     let board = Board::start_pos();
+
+
     for depth in 1..4 {
         c.bench_function(
             format!("nega_max depth {} start position", depth).as_str(),
-            |b| b.iter(|| nega_max(board.clone(), depth, Player::White)),
+            |b| b.iter(|| nega_max(board.clone(), depth, Player::White)
+            ),
         );
     }
 }
@@ -19,7 +23,10 @@ fn alpha_beta_start_pos(c: &mut Criterion) {
     for depth in 1..4 {
         c.bench_function(
             format!("alpha beta depth {} start position", depth).as_str(),
-            |b| b.iter(|| alpha_beta(board.clone(), depth, Player::White, -9999.0, 9999.0)),
+            |b| b.iter(|| {
+                let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
+                alpha_beta(board.clone(), depth, Player::White, -9999.0, 9999.0, &mut tt)
+            }),
         );
     }
 }
@@ -29,21 +36,25 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
     for depth in 1..4 {
         c.bench_function(
             format!("alpha beta depth {} take queen", depth).as_str(),
-            |b| b.iter(|| alpha_beta(board.clone(), depth, Player::White, -9999.0, 9999.0)),
+            |b| b.iter(|| {
+                let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
+                alpha_beta(board.clone(), depth, Player::White, -9999.0, 9999.0, &mut tt)
+            }),
         );
     }
 }
 
 fn play_game(mut board: Board, depth: u8) {
     while !board.checkmate() && board.rule_50() != 50 && !board.stalemate() && board.is_ok_quick() {
-        let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999., 9999.);
+        let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
+        let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999., 9999., &mut tt);
         board.apply_move(mv);
     }
 }
 
 fn play_through_game(c: &mut Criterion) {
     let board = Board::start_pos();
-    for depth in 2..6 {
+    for depth in 2..4 {
         c.bench_function(
             format!("Play through Alpha beta depth {}", depth).as_str(),
             |b| b.iter(|| play_game(board.clone(), depth)),

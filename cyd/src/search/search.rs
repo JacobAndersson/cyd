@@ -1,5 +1,25 @@
 use crate::evaluate::eval;
 use pleco::{BitMove, Board, Player};
+use std::collections::HashMap;
+
+const DELTA_PRUNING_DIFF: f32 = 200.;
+
+
+#[derive(PartialEq)]
+enum EntryFlag {
+    Exact,
+    LowerBound,
+    UpperBound
+}
+
+pub struct TtEntry {
+    mv: BitMove,
+    depth: u8,
+    flag: EntryFlag,
+    value: f32,
+}
+
+
 
 fn color_value(player: Player) -> f32 {
     return match player {
@@ -42,6 +62,10 @@ fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32
         alpha = standpat;
     }
 
+    if standpat < alpha - DELTA_PRUNING_DIFF {
+        return alpha;
+    }
+
     let moves = board.generate_moves();
     for mv in moves {
         //Should be possible to only generate capturing moves. Problem with check
@@ -73,9 +97,32 @@ pub fn alpha_beta(
     depth: u8,
     color: Player,
     mut alpha: f32,
-    beta: f32,
+    mut beta: f32,
+    tt_table: &mut HashMap<u64, TtEntry>
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
+    let zobrist = board.zobrist();
+    let alphaorig = alpha;
+
+    match tt_table.get(&zobrist) {
+        Some(tt_entry) => {
+            if tt_entry.depth >= depth {
+                let flag = &tt_entry.flag;
+                if flag == &EntryFlag::Exact {
+                    return (tt_entry.mv, tt_entry.value);
+                } else if flag == &EntryFlag::LowerBound {
+                    alpha = alpha.max(tt_entry.value);
+                } else if flag == &EntryFlag::UpperBound {
+                    beta = beta.min(tt_entry.value);
+                }
+                if alpha >= beta {
+                    return (tt_entry.mv, tt_entry.value)
+                }
+            }
+        }, 
+        None => {}
+    }
+
 
     if depth == 0 || board.checkmate() || moves.is_empty() {
         return (BitMove::null(), quiesce(board, 10, color, alpha, beta));
@@ -90,7 +137,9 @@ pub fn alpha_beta(
             color.other_player(),
             -beta,
             -alpha,
+            tt_table
         );
+        board.undo_move();
         score = -score;
 
         if score >= beta {
@@ -99,8 +148,28 @@ pub fn alpha_beta(
             alpha = score;
             best_move = mv;
         }
-        board.undo_move();
+
+        if alpha >= beta {
+            break;
+        }
     }
+
+    let value = alpha;
+    let mut flag = EntryFlag::Exact;
+
+    if value <= alphaorig {
+        flag = EntryFlag::UpperBound;
+    } else if value >= beta {
+        flag = EntryFlag::LowerBound;
+    }
+
+    let entry = TtEntry {
+        mv: best_move.clone(),
+        depth,
+        flag,
+        value
+    };
+    tt_table.insert(zobrist, entry);
 
     (best_move, alpha)
 }
@@ -118,8 +187,9 @@ mod search_test {
     }
 
     fn test_position_alpha_beta(fen: &str, depth: u8, player: Player, correct_move: &str) -> bool {
+        let mut tt: HashMap<u64, TtEntry> = HashMap::new();
         let board = Board::from_fen(fen).unwrap();
-        let (mv, score) = alpha_beta(board, depth, player, -9999.0, 9999.0);
+        let (mv, score) = alpha_beta(board, depth, player, -9999.0, 9999.0, &mut tt);
         println!("depth: {}, move: {}, score: {}", depth, mv, score);
         correct_move == mv.stringify()
     }
@@ -127,7 +197,9 @@ mod search_test {
     fn play_x_moves(fen: &str, depth: u8, plies: u8) -> Board {
         let mut board = Board::from_fen(fen).unwrap();
         for _i in 0..plies {
-            let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999.0, 9999.0);
+            let mut tt: HashMap<u64, TtEntry> = HashMap::new();
+
+            let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999.0, 9999.0, &mut tt);
             board.apply_move(mv)
         }
         board
