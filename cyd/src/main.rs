@@ -8,11 +8,11 @@ use std::time::Instant;
 
 fn main() {
     let mut board = Board::start_pos();
-    const SEARCH_DEPTH: u8 = 4;
-    let mut tt: HashMap<u64, search::TtEntry> = HashMap::new();
+    const SEARCH_DEPTH: u8 = 5;
 
     let t0 = Instant::now();
     while !board.checkmate() && board.rule_50() != 50 {
+        let mut tt: HashMap<u64, search::TtEntry> = HashMap::new();
         let mv_start = Instant::now();
         let (mv, score) = search::alpha_beta(
             board.clone(),

@@ -70,7 +70,7 @@ fn play_game(mut board: Board, depth: u8) {
 
 fn play_through_game(c: &mut Criterion) {
     let board = Board::start_pos();
-    for depth in 2..4 {
+    for depth in 2..5 {
         c.bench_function(
             format!("Play through Alpha beta depth {}", depth).as_str(),
             |b| b.iter(|| play_game(board.clone(), depth)),
