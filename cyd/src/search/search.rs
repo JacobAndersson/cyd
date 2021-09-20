@@ -3,7 +3,9 @@ use pleco::{BitMove, Board, Player};
 use std::collections::HashMap;
 
 use std::thread;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
+
+use dashmap::DashMap;
 
 const DELTA_PRUNING_DIFF: f32 = 200.;
 
@@ -98,14 +100,14 @@ pub fn alpha_beta(
     color: Player,
     mut alpha: f32,
     mut beta: f32,
-    tt_table: &mut Arc<Mutex<HashMap<u64, TtEntry>>>
+    tt_table: &mut Arc<DashMap<u64, TtEntry>>
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
     let zobrist = board.zobrist();
     let alphaorig = alpha;
 
     {
-        match tt_table.lock().unwrap().get(&zobrist) {
+        match tt_table.get(&zobrist) {
             Some(tt_entry) => {
                 if tt_entry.depth >= depth {
                     let flag = &tt_entry.flag;
@@ -171,18 +173,19 @@ pub fn alpha_beta(
         value,
     };
     {
-        let mut table = tt_table.lock().unwrap();
-        table.insert(zobrist, entry);
+        //let mut table = tt_table.write().unwrap();
+        tt_table.insert(zobrist, entry);
     }
 
     (best_move, alpha)
 }
 
 
-pub fn search_parallel(mut board: Board, depth: u8, color: Player,  n_threads: u8) -> (BitMove, f32) {
-    let transposition_table = Arc::new(Mutex::new(HashMap::<u64, TtEntry>::new()));
-    let mut threads = vec![];
+pub fn search_parallel(board: Board, depth: u8, color: Player,  n_threads: u8) -> (BitMove, f32) {
+    //let transposition_table = Arc::new(RwLock::new(HashMap::<u64, TtEntry>::new()));
+    let transposition_table = Arc::new(DashMap::<u64, TtEntry>::new());
 
+    let mut threads = vec![];
     for _ in 0..n_threads {
         let mut tt = transposition_table.clone();
         let b = board.clone();
@@ -198,6 +201,7 @@ pub fn search_parallel(mut board: Board, depth: u8, color: Player,  n_threads: u
            mv
         }));
     }
+
     let mut max = (BitMove::null(), 0.);
     for t in threads {
         max = t.join().unwrap(); 
