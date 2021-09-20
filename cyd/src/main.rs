@@ -1,12 +1,48 @@
 mod evaluate;
 mod search;
 
-use pleco::Board;
+use pleco::{Board, Player};
 
-use std::collections::HashMap;
 use std::time::Instant;
+use std::collections::HashMap;
+
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 fn main() {
+    //dashmap
+    let mut board = Board::start_pos();
+    let depth = 6;
+    let color = Player::White;
+    let t0 = Instant::now();
+    let mut tt = Arc::new(Mutex::new(HashMap::<u64, search::TtEntry>::new()));
+    //search::search_parallel(board, depth, color, 3);
+    search::alpha_beta(board, depth, color, -9999.0, 9999.0, &mut tt);
+    println!("{:?}", t0.elapsed());
+
+
+    /*
+    let mut tt = Arc::new(Mutex::new(HashMap::<u64, String>::new()));
+    let mut threads = vec![];
+
+    for i in 0..10000 {
+        let table = tt.clone();
+        threads.push(thread::spawn(move || {
+            let t0 = Instant::now();
+            let mut access = table.lock().unwrap();
+            access.insert(i, "TESTING".to_string());
+            println!("{:?}", t0.elapsed());
+        }));
+    }
+    
+    for t in threads {
+        t.join();
+    }
+
+    //println!("{:?}", tt);
+    */
+
+    /*
     let mut board = Board::start_pos();
     const SEARCH_DEPTH: u8 = 5;
 
@@ -35,4 +71,5 @@ fn main() {
     }
 
     println!("GAME TOOK: {:?}", t0.elapsed())
+    */
 }

@@ -2,6 +2,9 @@ use crate::evaluate::eval;
 use pleco::{BitMove, Board, Player};
 use std::collections::HashMap;
 
+use std::thread;
+use std::sync::{Arc, Mutex};
+
 const DELTA_PRUNING_DIFF: f32 = 200.;
 
 #[derive(PartialEq)]
@@ -95,29 +98,31 @@ pub fn alpha_beta(
     color: Player,
     mut alpha: f32,
     mut beta: f32,
-    tt_table: &mut HashMap<u64, TtEntry>,
+    tt_table: &mut Arc<Mutex<HashMap<u64, TtEntry>>>
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
     let zobrist = board.zobrist();
     let alphaorig = alpha;
 
-    match tt_table.get(&zobrist) {
-        Some(tt_entry) => {
-            if tt_entry.depth >= depth {
-                let flag = &tt_entry.flag;
-                if flag == &EntryFlag::Exact {
-                    return (tt_entry.mv, tt_entry.value);
-                } else if flag == &EntryFlag::LowerBound {
-                    alpha = alpha.max(tt_entry.value);
-                } else if flag == &EntryFlag::UpperBound {
-                    beta = beta.min(tt_entry.value);
-                }
-                if alpha >= beta {
-                    return (tt_entry.mv, tt_entry.value);
+    {
+        match tt_table.lock().unwrap().get(&zobrist) {
+            Some(tt_entry) => {
+                if tt_entry.depth >= depth {
+                    let flag = &tt_entry.flag;
+                    if flag == &EntryFlag::Exact {
+                        return (tt_entry.mv, tt_entry.value);
+                    } else if flag == &EntryFlag::LowerBound {
+                        alpha = alpha.max(tt_entry.value);
+                    } else if flag == &EntryFlag::UpperBound {
+                        beta = beta.min(tt_entry.value);
+                    }
+                    if alpha >= beta {
+                        return (tt_entry.mv, tt_entry.value);
+                    }
                 }
             }
+            None => {}
         }
-        None => {}
     }
 
     if depth == 0 || board.checkmate() || moves.is_empty() {
@@ -165,11 +170,43 @@ pub fn alpha_beta(
         flag,
         value,
     };
-    tt_table.insert(zobrist, entry);
+    {
+        let mut table = tt_table.lock().unwrap();
+        table.insert(zobrist, entry);
+    }
 
     (best_move, alpha)
 }
 
+
+pub fn search_parallel(mut board: Board, depth: u8, color: Player,  n_threads: u8) -> (BitMove, f32) {
+    let transposition_table = Arc::new(Mutex::new(HashMap::<u64, TtEntry>::new()));
+    let mut threads = vec![];
+
+    for _ in 0..n_threads {
+        let mut tt = transposition_table.clone();
+        let b = board.clone();
+        threads.push(thread::spawn(move || {
+           let mv = alpha_beta(
+                b,
+               depth,
+               color,
+                -9999.0,
+               9999.0,
+               &mut tt
+           );
+           mv
+        }));
+    }
+    let mut max = (BitMove::null(), 0.);
+    for t in threads {
+        max = t.join().unwrap(); 
+    }
+    max
+}
+
+
+/*
 #[cfg(test)]
 mod search_test {
     use super::*;
@@ -303,3 +340,4 @@ mod search_test {
         }
     }
 }
+*/
