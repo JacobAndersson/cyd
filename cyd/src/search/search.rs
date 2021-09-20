@@ -1,9 +1,11 @@
 use crate::evaluate::eval;
+use crate::utils;
+
 use pleco::{BitMove, Board, Player};
-use std::collections::HashMap;
 
 use std::thread;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::Arc;
+use std::time;
 
 use dashmap::DashMap;
 
@@ -173,30 +175,27 @@ pub fn alpha_beta(
         value,
     };
     {
-        //let mut table = tt_table.write().unwrap();
         tt_table.insert(zobrist, entry);
     }
 
     (best_move, alpha)
 }
 
-
 pub fn search_parallel(board: Board, depth: u8, color: Player,  n_threads: u8) -> (BitMove, f32) {
-    //let transposition_table = Arc::new(RwLock::new(HashMap::<u64, TtEntry>::new()));
-    let transposition_table = Arc::new(DashMap::<u64, TtEntry>::new());
-
+    let transposition_table = utils::new_tt_table();
     let mut threads = vec![];
-    for _ in 0..n_threads {
+    for i in 0..n_threads {
         let mut tt = transposition_table.clone();
         let b = board.clone();
         threads.push(thread::spawn(move || {
-           let mv = alpha_beta(
+            thread::sleep(time::Duration::from_millis(100*i as u64));
+            let mv = alpha_beta(
                 b,
-               depth,
-               color,
+                depth,
+                color,
                 -9999.0,
-               9999.0,
-               &mut tt
+                9999.0,
+                &mut tt
            );
            mv
         }));
@@ -209,8 +208,6 @@ pub fn search_parallel(board: Board, depth: u8, color: Player,  n_threads: u8) -
     max
 }
 
-
-/*
 #[cfg(test)]
 mod search_test {
     use super::*;
@@ -224,7 +221,7 @@ mod search_test {
     }
 
     fn test_position_alpha_beta(fen: &str, depth: u8, player: Player, correct_move: &str) -> bool {
-        let mut tt: HashMap<u64, TtEntry> = HashMap::new();
+        let mut tt = utils::new_tt_table();
         let board = Board::from_fen(fen).unwrap();
         let (mv, score) = alpha_beta(board, depth, player, -9999.0, 9999.0, &mut tt);
         println!("depth: {}, move: {}, score: {}", depth, mv, score);
@@ -234,7 +231,7 @@ mod search_test {
     fn play_x_moves(fen: &str, depth: u8, plies: u8) -> Board {
         let mut board = Board::from_fen(fen).unwrap();
         for _i in 0..plies {
-            let mut tt: HashMap<u64, TtEntry> = HashMap::new();
+            let mut tt = utils::new_tt_table();
 
             let (mv, _score) =
                 alpha_beta(board.clone(), depth, board.turn(), -9999.0, 9999.0, &mut tt);
@@ -344,4 +341,3 @@ mod search_test {
         }
     }
 }
-*/

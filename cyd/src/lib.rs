@@ -6,6 +6,7 @@ use pleco::Board;
 
 mod evaluate;
 mod search;
+mod utils;
 
 pub use evaluate::eval;
 pub use search::*;
