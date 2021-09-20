@@ -10,6 +10,7 @@ mod utils;
 
 pub use evaluate::eval;
 pub use search::*;
+pub use utils::new_tt_table;
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen]

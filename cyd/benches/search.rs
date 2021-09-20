@@ -1,9 +1,8 @@
 extern crate cyd;
-use cyd::{alpha_beta, nega_max};
+use cyd::{alpha_beta, nega_max, new_tt_table};
 
 use criterion::{criterion_group, Criterion};
 use pleco::{Board, Player};
-use std::collections::HashMap;
 
 fn nega_max_start_pos(c: &mut Criterion) {
     let board = Board::start_pos();
@@ -23,7 +22,7 @@ fn alpha_beta_start_pos(c: &mut Criterion) {
             format!("alpha beta depth {} start position", depth).as_str(),
             |b| {
                 b.iter(|| {
-                    let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
+                    let mut tt = new_tt_table();
                     alpha_beta(
                         board.clone(),
                         depth,
@@ -45,7 +44,7 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
             format!("alpha beta depth {} take queen", depth).as_str(),
             |b| {
                 b.iter(|| {
-                    let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
+                    let mut tt = new_tt_table();
                     alpha_beta(
                         board.clone(),
                         depth,
@@ -62,7 +61,7 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
 
 fn play_game(mut board: Board, depth: u8) {
     while !board.checkmate() && board.rule_50() != 50 && !board.stalemate() && board.is_ok_quick() {
-        let mut tt: HashMap<u64, cyd::TtEntry> = HashMap::new();
+        let mut tt = new_tt_table();
         let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999., 9999., &mut tt);
         board.apply_move(mv);
     }
