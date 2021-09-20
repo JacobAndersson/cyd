@@ -3,8 +3,8 @@ use crate::utils;
 
 use pleco::{BitMove, Board, Player};
 
-use std::thread;
 use std::sync::Arc;
+use std::thread;
 use std::time;
 
 use dashmap::DashMap;
@@ -102,7 +102,7 @@ pub fn alpha_beta(
     color: Player,
     mut alpha: f32,
     mut beta: f32,
-    tt_table: &mut Arc<DashMap<u64, TtEntry>>
+    tt_table: &mut Arc<DashMap<u64, TtEntry>>,
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
     let zobrist = board.zobrist();
@@ -181,29 +181,22 @@ pub fn alpha_beta(
     (best_move, alpha)
 }
 
-pub fn search_parallel(board: Board, depth: u8, color: Player,  n_threads: u8) -> (BitMove, f32) {
+pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) -> (BitMove, f32) {
     let transposition_table = utils::new_tt_table();
     let mut threads = vec![];
     for i in 0..n_threads {
         let mut tt = transposition_table.clone();
         let b = board.clone();
         threads.push(thread::spawn(move || {
-            thread::sleep(time::Duration::from_millis(100*i as u64));
-            let mv = alpha_beta(
-                b,
-                depth,
-                color,
-                -9999.0,
-                9999.0,
-                &mut tt
-           );
-           mv
+            thread::sleep(time::Duration::from_millis(100 * i as u64));
+            let mv = alpha_beta(b, depth, color, -9999.0, 9999.0, &mut tt);
+            mv
         }));
     }
 
     let mut max = (BitMove::null(), 0.);
     for t in threads {
-        max = t.join().unwrap(); 
+        max = t.join().unwrap();
     }
     max
 }

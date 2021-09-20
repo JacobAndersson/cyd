@@ -13,7 +13,8 @@ fn main() {
     let mut board = Board::start_pos();
     while !board.checkmate() && board.rule_50() != 50 {
         let mv_start = Instant::now();
-        let (mv, score) = search::search_parallel(board.clone(), SEARCH_DEPTH, board.turn(), NUM_THREADS);
+        let (mv, score) =
+            search::search_parallel(board.clone(), SEARCH_DEPTH, board.turn(), NUM_THREADS);
         let end = mv_start.elapsed();
         board.apply_move(mv);
 
