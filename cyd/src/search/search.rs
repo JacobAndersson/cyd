@@ -134,10 +134,21 @@ pub fn alpha_beta(
         return (BitMove::null(), quiesce(board, 10, color, alpha, beta));
     }
 
-    if !board.in_check() && board.ply() > 0 && depth > NULL_MOVE_DEPTH_REDUCTION + 1 && board.non_pawn_material(color) > 0 {
+    if !board.in_check()
+        && board.ply() > 0
+        && depth > NULL_MOVE_DEPTH_REDUCTION + 1
+        && board.non_pawn_material(color) > 0
+    {
         unsafe {
             board.apply_null_move();
-            let (_, mut score) = alpha_beta(board.shallow_clone(), depth - 1 - NULL_MOVE_DEPTH_REDUCTION, color.other_player(), -beta, -beta + 1., tt_table);
+            let (_, mut score) = alpha_beta(
+                board.shallow_clone(),
+                depth - 1 - NULL_MOVE_DEPTH_REDUCTION,
+                color.other_player(),
+                -beta,
+                -beta + 1.,
+                tt_table,
+            );
             score = -score;
             board.undo_null_move();
             if score >= beta {
@@ -145,7 +156,6 @@ pub fn alpha_beta(
             }
         }
     }
-
 
     let mut best_move = BitMove::null();
     for mv in moves {
