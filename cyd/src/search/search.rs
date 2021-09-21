@@ -10,6 +10,7 @@ use std::time;
 use dashmap::DashMap;
 
 const DELTA_PRUNING_DIFF: f32 = 200.;
+const NULL_MOVE_DEPTH_REDUCTION: u8 = 10;
 
 #[derive(PartialEq)]
 enum EntryFlag {
@@ -132,6 +133,19 @@ pub fn alpha_beta(
     if depth == 0 || board.checkmate() || moves.is_empty() {
         return (BitMove::null(), quiesce(board, 10, color, alpha, beta));
     }
+
+    if !board.in_check() && board.ply() > 0 && depth > NULL_MOVE_DEPTH_REDUCTION + 1 && board.non_pawn_material(color) > 0 {
+        unsafe {
+            board.apply_null_move();
+            let (_, mut score) = alpha_beta(board.shallow_clone(), depth - 1 - NULL_MOVE_DEPTH_REDUCTION, color.other_player(), -beta, -beta + 1., tt_table);
+            score = -score;
+            board.undo_null_move();
+            if score >= beta {
+                return (BitMove::null(), beta);
+            }
+        }
+    }
+
 
     let mut best_move = BitMove::null();
     for mv in moves {
