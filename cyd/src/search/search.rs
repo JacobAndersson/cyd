@@ -10,7 +10,7 @@ use std::time;
 use dashmap::DashMap;
 
 const DELTA_PRUNING_DIFF: f32 = 200.;
-const NULL_MOVE_DEPTH_REDUCTION: u8 = 10;
+const NULL_MOVE_DEPTH_REDUCTION: u8 = 3;
 
 #[derive(PartialEq)]
 enum EntryFlag {
@@ -139,6 +139,7 @@ pub fn alpha_beta(
         && depth > NULL_MOVE_DEPTH_REDUCTION + 1
         && board.non_pawn_material(color) > 0
     {
+        println!("NULL MOVE PRUNING");
         unsafe {
             board.apply_null_move();
             let (_, mut score) = alpha_beta(
