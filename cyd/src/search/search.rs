@@ -74,7 +74,7 @@ fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32
     let moves = board.generate_moves();
     for mv in moves {
         //Should be possible to only generate capturing moves. Problem with check
-        if !(board.is_capture(mv) || board.gives_check(mv)){
+        if !(board.is_capture(mv) || board.gives_check(mv)) {
             continue;
         }
 
