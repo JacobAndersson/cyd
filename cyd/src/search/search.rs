@@ -10,7 +10,7 @@ use std::time;
 use dashmap::DashMap;
 
 const DELTA_PRUNING_DIFF: f32 = 200.;
-const NULL_MOVE_DEPTH_REDUCTION: u8 = 3;
+const NULL_MOVE_DEPTH_REDUCTION: u8 = 2;
 
 #[derive(PartialEq)]
 enum EntryFlag {
@@ -104,6 +104,7 @@ pub fn alpha_beta(
     mut alpha: f32,
     mut beta: f32,
     tt_table: &mut Arc<DashMap<u64, TtEntry>>,
+    do_null: bool
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
     let zobrist = board.zobrist();
@@ -134,12 +135,13 @@ pub fn alpha_beta(
         return (BitMove::null(), quiesce(board, 10, color, alpha, beta));
     }
 
-    if !board.in_check()
+    if do_null 
+        && !board.in_check()
         && board.ply() > 0
         && depth > NULL_MOVE_DEPTH_REDUCTION + 1
+        && depth < 4
         && board.non_pawn_material(color) > 0
     {
-        println!("NULL MOVE PRUNING");
         unsafe {
             board.apply_null_move();
             let (_, mut score) = alpha_beta(
@@ -149,6 +151,7 @@ pub fn alpha_beta(
                 -beta,
                 -beta + 1.,
                 tt_table,
+                false
             );
             score = -score;
             board.undo_null_move();
@@ -168,6 +171,7 @@ pub fn alpha_beta(
             -beta,
             -alpha,
             tt_table,
+            true
         );
         board.undo_move();
         score = -score;
@@ -214,7 +218,7 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) ->
         let b = board.clone();
         threads.push(thread::spawn(move || {
             thread::sleep(time::Duration::from_millis(100 * i as u64));
-            let mv = alpha_beta(b, depth, color, -9999.0, 9999.0, &mut tt);
+            let mv = alpha_beta(b, depth, color, -9999.0, 9999.0, &mut tt, true);
             mv
         }));
     }
