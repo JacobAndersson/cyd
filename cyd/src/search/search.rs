@@ -215,7 +215,7 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) ->
     let mut threads = vec![];
     for i in 0..n_threads {
         let mut tt = transposition_table.clone();
-        let b = board.clone();
+        let b = board.parallel_clone();
         threads.push(thread::spawn(move || {
             thread::sleep(time::Duration::from_millis(100 * i as u64));
             let mv = alpha_beta(b, depth, color, -9999.0, 9999.0, &mut tt, true);

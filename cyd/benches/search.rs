@@ -30,6 +30,7 @@ fn alpha_beta_start_pos(c: &mut Criterion) {
                         -9999.0,
                         9999.0,
                         &mut tt,
+                        true
                     )
                 })
             },
@@ -52,6 +53,7 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
                         -9999.0,
                         9999.0,
                         &mut tt,
+                        true
                     )
                 })
             },
@@ -62,7 +64,7 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
 fn play_game(mut board: Board, depth: u8) {
     while !board.checkmate() && board.rule_50() != 50 && !board.stalemate() && board.is_ok_quick() {
         let mut tt = new_tt_table();
-        let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999., 9999., &mut tt);
+        let (mv, _score) = alpha_beta(board.clone(), depth, board.turn(), -9999., 9999., &mut tt, true);
         board.apply_move(mv);
     }
 }

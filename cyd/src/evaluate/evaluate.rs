@@ -36,6 +36,12 @@ fn piece_square_table(board: &Board) -> f32 {
     (psq.0 - psq.1) as f32
 }
 
+fn pinned_pieces(board: &Board) -> f32 {
+    let wp = board.pieces_pinned(Player::White).count_bits() as f32;
+    let bp = board.pieces_pinned(Player::Black).count_bits() as f32;
+    return bp - wp; 
+}
+
 pub fn eval(board: &Board) -> f32 {
     if board.checkmate() {
         let turn: f32 = match &board.turn() {
@@ -47,7 +53,9 @@ pub fn eval(board: &Board) -> f32 {
 
     let material = material_count(board);
     let psq = piece_square_table(board);
-    material + 0.1 * psq
+    let pinned = pinned_pieces(board);
+
+    material + 0.2 * psq + 0.1 * pinned
 }
 
 #[cfg(test)]
@@ -95,4 +103,24 @@ mod eval_test {
         let board = Board::from_fen("3k4/8/8/8/8/8/P7/K1q5 w - - 0 1").unwrap();
         assert_eq!(-9999.0, eval(&board));
     }
+
+
+    #[test]
+    fn test_pinned_pieces() {
+        let b1 = Board::from_fen("2k5/3p4/8/5B2/8/8/8/2K5 w - - 0 1").unwrap();
+        let p1 = pinned_pieces(&b1);
+        assert_eq!(p1, 1.0);
+        let b2 = Board::from_fen("2k5/3p4/2r5/5B2/8/8/2P5/2K5 w - - 0 1").unwrap();
+        let p2 = pinned_pieces(&b2);
+        assert_eq!(p2, 0.0);
+
+        let b3 = Board::from_fen("3k4/8/8/3r4/8/8/3P4/3K4 w - - 0 1").unwrap();
+        let p3 = pinned_pieces(&b3);
+        assert_eq!(p3, -1.0);
+
+        let b4 = Board::from_fen("3k4/8/8/3r4/8/1b6/2PP4/3KN2q w - - 0 1").unwrap();
+        let p4 = pinned_pieces(&b4);
+        assert_eq!(p4, -3.0);
+    }
+
 }

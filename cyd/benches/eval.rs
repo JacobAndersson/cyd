@@ -9,7 +9,7 @@ use rand::Rng;
 fn eval_pos(c: &mut Criterion) {
     let mut rng = rand::thread_rng();
 
-    for _ in 0..20 {
+    for _ in 0..10 {
         let idx = rng.gen_range(0..100);
         let fen = BOARD_FENS[idx];
         let board = Board::from_fen(fen).unwrap();
