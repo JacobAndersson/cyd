@@ -1,9 +1,42 @@
-const cyd = require("cyd");
 const axios = require("axios");
+const { spawn } = require('child_process');
 
+const DEBUG = process.env.DEBUG || 0;
 const TOKEN = process.env.TOKEN;
+const DEPTH = process.env.DEPTH || 5;
+const THREADS = 1;
+
 var fs = require("fs");
 var { Writable } = require("stream");
+
+let GAME_ID = "";
+let IS_WHITE = true;
+
+function getMove(moves, depth, threads){
+  let process = spawn("./cyd", ["--moves", moves, "--depth",  depth, "--num-threads",  threads]);
+  
+  return new Promise((resolve, reject) => {
+    process.stdout.on("data", (data) => {
+      let split = data.toString().split(",");
+      let move = split[0];
+      let score = split[1];
+      resolve({move, score});
+    });
+
+    process.stdout.on("error", (error) => {
+      console.error(error);
+      reject(error);
+    });
+
+    process.on("error", (error) => {
+      reject(error);
+    })
+
+    process.on("close", (code) => {
+      console.log("Search closed with", code);
+    })
+  })
+}
 
 function getMoves(id, handler) {
   axios
@@ -29,7 +62,7 @@ function makeMove(gameId, move){
       }
     })
     .then((response) => {
-      console.log(response.data);
+      console.log("Succesfully made move");
     })
     .catch(err => {
       console.error(err);
@@ -37,18 +70,49 @@ function makeMove(gameId, move){
 }
 
 class boardStateStream extends Writable {
-  _write(chunk, encoding, callback) {
-    console.log('Board state', chunk.toString());
+  
+  async _write(chunk, encoding, callback) {
     if (chunk.toString().length == 1){
       callback();
       return;
     }
-    const { id: gameId, state: gameState, status }= JSON.parse(chunk);
+
+    let data = JSON.parse(chunk.toString());
+    if (DEBUG){
+      console.log('Board state', chunk.toString());
+    }
+
+    const { type, id: gameId, state: gameState, status, white, black, winner } = data;
+    if (type == "gameFull"){
+      GAME_ID = gameId;
+      if (white.name == "c2d2"){
+        IS_WHITE = true;
+      } else {
+        IS_WHITE = false;
+      }
+    }
+
+    if (winner) {
+      return callback();
+    }
+
     if (status == 'aborted'){
       return callback();
     }
-    const { moves } = gameState;
-    makeMove(gameId, "a4a5");
+    
+    if (!gameState && type == "gamestate"){
+      return callback();
+    }
+
+    let moves = gameState?.moves || data.moves;
+    let numMoves = moves?.split(" ")?.length || 0;
+
+    if (numMoves % 2 == 0 && IS_WHITE || numMoves % 2 == 1 && !IS_WHITE) {
+      const { move, score } = await getMove(moves, DEPTH, THREADS)
+      console.log(`MOVE: ${move}, SCORE: ${score}`);
+      makeMove(GAME_ID, move);
+    }
+
     callback();
   }
 }
@@ -68,7 +132,7 @@ class game extends Writable {
     console.log('Game state');
     let event = JSON.parse(chunk);
 
-    if (event.type === "gameStart") {
+    if (event.type === "gameStart" && GAME_ID == "") {
       getMoves(event.game.id, this.handler);
     }
     callback();
@@ -90,6 +154,4 @@ function main() {
       response.data.pipe(eventHandler);
     });
 }
-let move = cyd.find_move("", 6, 3);
-console.log(move);
-//main();
+main();

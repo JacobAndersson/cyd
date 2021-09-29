@@ -10,14 +10,10 @@ name = "cyd"
 path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-pleco = "0.5.0"
-wasm-bindgen = "0.2"
-dashmap = "4.0.2"
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+[dependencies]
 pleco = "0.5.0"
 dashmap = "4.0.2"
+clap = "3.0.0-beta.4"
 
 [dev-dependencies]
 criterion = "0.3"
