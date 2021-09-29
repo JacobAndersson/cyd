@@ -7,7 +7,7 @@ var { Writable } = require("stream");
 
 function getMoves(id, handler) {
   axios
-    .get("https://lichess.org/api/stream/event", {
+    .get(`https://lichess.org/api/bot/game/stream/${id}`, {
       headers: {
         Authorization: `Bearer ${TOKEN}`,
       },
@@ -15,43 +15,81 @@ function getMoves(id, handler) {
     })
     .then((response) => {
       response.data.pipe(handler);
+    })
+    .catch(err => {
+      console.error(err);
+    });
+}
+
+function makeMove(gameId, move){
+  axios
+    .post(`https://lichess.org/api/bot/game/${gameId}/move/${move}`,{}, {
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+      }
+    })
+    .then((response) => {
+      console.log(response.data);
+    })
+    .catch(err => {
+      console.error(err);
     });
 }
 
 class boardStateStream extends Writable {
   _write(chunk, encoding, callback) {
-    console.log(JSON.parse(chunk));
+    console.log('Board state', chunk.toString());
+    if (chunk.toString().length == 1){
+      callback();
+      return;
+    }
+    const { id: gameId, state: gameState, status }= JSON.parse(chunk);
+    if (status == 'aborted'){
+      return callback();
+    }
+    const { moves } = gameState;
+    makeMove(gameId, "a4a5");
+    callback();
   }
 }
 
 class game extends Writable {
-  constructor(options, handler) {
-    super(options);
-    console.log(options);
-    console.log(handler);
+  constructor(handler) {
+    super();
+    this.handler = handler;
   }
 
   _write(chunk, encoding, callback) {
-    console.log("HERE");
-    console.log(chunk.toString());
+    if (!chunk || chunk.toString().length == 1){
+      callback();
+      return;
+    }
+
+    console.log('Game state');
     let event = JSON.parse(chunk);
 
     if (event.type === "gameStart") {
       getMoves(event.game.id, this.handler);
     }
+    callback();
   }
 }
 
-const moveStream = new boardStateStream();
-const eventHandler = new game(moveStream);
+function main() {
+  const moveStream = new boardStateStream();
+  const eventHandler = new game(moveStream);
 
-axios
-  .get("https://lichess.org/api/stream/event", {
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-    },
-    responseType: "stream",
-  })
-  .then((response) => {
-    response.data.pipe(eventHandler);
-  });
+  axios
+    .get("https://lichess.org/api/stream/event", {
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+      },
+      responseType: "stream",
+    })
+    .then((response) => {
+      response.data.pipe(eventHandler);
+    });
+}
+let move = cyd.find_move("", 6, 3);
+console.log(move);
+//main();
