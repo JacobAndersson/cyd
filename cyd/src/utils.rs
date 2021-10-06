@@ -30,3 +30,26 @@ pub fn find_move(moves: String, depth: u8, num_threads: u8) -> (String, f32) {
     let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), num_threads);
     return (mv.stringify(), score);
 }
+
+#[allow(dead_code)]
+fn from_start(depth: u8, n_threads: u8) {
+    use std::time::Instant;
+
+    let mut board = Board::start_pos();
+    while !board.checkmate() && board.rule_50() != 50 {
+        let mv_start = Instant::now();
+        let (mv, score) =
+            search::search_parallel(board.clone(), depth, board.turn(), n_threads);
+        let end = mv_start.elapsed();
+        board.apply_move(mv);
+
+        println!("{}", board);
+        println!(
+            "SCORE: {}, MOVE: {}, player: {}, time: {:?}",
+            score,
+            &mv,
+            board.turn().other_player(),
+            end
+        );
+    }
+}

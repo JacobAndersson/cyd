@@ -23,7 +23,7 @@ pub struct Config {
 
 pub fn get_config() -> Config {
     let mut config = Config::parse();
-    if (config.fen == ""){
+    if config.fen == ""{
         config.fen = String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     }
     config 
