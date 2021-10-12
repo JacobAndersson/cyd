@@ -51,9 +51,9 @@ pub fn eval(board: &Board) -> f32 {
         return -turn * (9999.0 - board.ply() as f32);
     }
 
-    let material = material_count(board);
-    let psq = piece_square_table(board);
-    let pinned = pinned_pieces(board);
+    let mut material = material_count(board);
+    let mut psq = piece_square_table(board);
+    let mut pinned = pinned_pieces(board);
 
     material + 0.2 * psq + 0.1 * pinned
 }

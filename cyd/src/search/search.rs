@@ -3,7 +3,8 @@ use crate::utils;
 
 use pleco::{BitMove, Board, Player};
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, RwLock};
+use std::collections::HashMap;
 use std::thread;
 use std::time;
 
@@ -57,6 +58,17 @@ pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
     (best_move, max)
 }
 
+
+fn score_move(mv: &BitMove) -> u32 {
+    if mv.is_capture() {
+        return 10;
+   } else if mv.is_quiet_move() {
+        return 0;
+   } else {
+        return 5;
+   }
+}
+
 fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32) -> f32 {
     let standpat = color_value(color) * eval(&board);
     if depth == 0 {
@@ -71,8 +83,10 @@ fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32
         return alpha;
     }
 
-    let moves = board.generate_moves();
-    for mv in moves {
+    let mut moves: Vec<(BitMove, u32)> = board.generate_moves().into_iter().map(|mv| (mv, score_move(&mv))).collect();
+    moves.sort_by(|a, b| (a.1).cmp(&b.1));
+
+    for (mv, _) in moves {
         //Should be possible to only generate capturing moves. Problem with check
         if !(board.is_capture(mv) || board.gives_check(mv)) {
             continue;
@@ -103,33 +117,33 @@ pub fn alpha_beta(
     color: Player,
     mut alpha: f32,
     mut beta: f32,
-    tt_table: &mut Arc<DashMap<u64, TtEntry>>,
-    do_null: bool
+    tt_table: &mut Arc<RwLock<HashMap<u64, TtEntry>>>,
+    do_null: bool,
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
     let zobrist = board.zobrist();
     let alphaorig = alpha;
 
-    {
-        match tt_table.get(&zobrist) {
-            Some(tt_entry) => {
-                if tt_entry.depth >= depth {
-                    let flag = &tt_entry.flag;
-                    if flag == &EntryFlag::Exact {
-                        return (tt_entry.mv, tt_entry.value);
-                    } else if flag == &EntryFlag::LowerBound {
-                        alpha = alpha.max(tt_entry.value);
-                    } else if flag == &EntryFlag::UpperBound {
-                        beta = beta.min(tt_entry.value);
-                    }
-                    if alpha >= beta {
-                        return (tt_entry.mv, tt_entry.value);
-                    }
+    let table = tt_table.read().unwrap();
+    match table.get(&zobrist) {
+        Some(tt_entry) => {
+            if tt_entry.depth >= depth {
+                let flag = &tt_entry.flag;
+                if flag == &EntryFlag::Exact {
+                    return (tt_entry.mv, tt_entry.value);
+                } else if flag == &EntryFlag::LowerBound {
+                    alpha = alpha.max(tt_entry.value);
+                } else if flag == &EntryFlag::UpperBound {
+                    beta = beta.min(tt_entry.value);
+                }
+                if alpha >= beta {
+                    return (tt_entry.mv, tt_entry.value);
                 }
             }
-            None => {}
         }
+        None => {}
     }
+    drop(table);
 
     if depth == 0 || board.checkmate() || moves.is_empty() {
         return (BitMove::null(), quiesce(board, 10, color, alpha, beta));
@@ -151,7 +165,7 @@ pub fn alpha_beta(
                 -beta,
                 -beta + 1.,
                 tt_table,
-                false
+                false,
             );
             score = -score;
             board.undo_null_move();
@@ -171,7 +185,7 @@ pub fn alpha_beta(
             -beta,
             -alpha,
             tt_table,
-            true
+            true,
         );
         board.undo_move();
         score = -score;
@@ -203,9 +217,8 @@ pub fn alpha_beta(
         flag,
         value,
     };
-    {
-        tt_table.insert(zobrist, entry);
-    }
+
+    tt_table.write().unwrap().insert(zobrist, entry);
 
     (best_move, alpha)
 }
@@ -216,8 +229,8 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) ->
     for i in 0..n_threads {
         let mut tt = transposition_table.clone();
         let b = board.parallel_clone();
+
         threads.push(thread::spawn(move || {
-            thread::sleep(time::Duration::from_millis(100 * i as u64));
             let mv = alpha_beta(b, depth, color, -9999.0, 9999.0, &mut tt, true);
             mv
         }));

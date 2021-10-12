@@ -1,12 +1,13 @@
 use crate::search::TtEntry;
 use dashmap::DashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, RwLock};
+use std::collections::HashMap;
 use pleco::Board;
 
 use crate::search;
 
-pub fn new_tt_table() -> Arc<DashMap<u64, TtEntry>> {
-    Arc::new(DashMap::<u64, TtEntry>::new())
+pub fn new_tt_table() -> Arc<RwLock<HashMap<u64, TtEntry>>> {
+    Arc::new(RwLock::new(HashMap::<u64, TtEntry>::new()))
 }
 
 pub fn find_move_fen(fen: String, depth: u8, num_threads: u8) -> (String, f32) {
@@ -32,7 +33,7 @@ pub fn find_move(moves: String, depth: u8, num_threads: u8) -> (String, f32) {
 }
 
 #[allow(dead_code)]
-fn from_start(depth: u8, n_threads: u8) {
+pub fn from_start(depth: u8, n_threads: u8) {
     use std::time::Instant;
 
     let mut board = Board::start_pos();
@@ -43,13 +44,13 @@ fn from_start(depth: u8, n_threads: u8) {
         let end = mv_start.elapsed();
         board.apply_move(mv);
 
-        println!("{}", board);
         println!(
-            "SCORE: {}, MOVE: {}, player: {}, time: {:?}",
+            "SCORE: {}, MOVE: {}, player: {}, time: {:?}\n{}\n",
             score,
             &mv,
             board.turn().other_player(),
-            end
+            end,
+            board,
         );
     }
 }
