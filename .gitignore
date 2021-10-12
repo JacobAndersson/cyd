@@ -4,3 +4,4 @@ pkg
 node_modules
 *.sw[op]
 /cyd_lichess/cyd
+*.pgn
