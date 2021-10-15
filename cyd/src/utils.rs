@@ -1,15 +1,14 @@
 use crate::search::TtEntry;
-use dashmap::DashMap;
-use std::sync::{Arc, Mutex, RwLock};
 use std::collections::HashMap;
 use pleco::Board;
 
 use crate::search;
 
-pub fn new_tt_table() -> Arc<RwLock<HashMap<u64, TtEntry>>> {
-    Arc::new(RwLock::new(HashMap::<u64, TtEntry>::new()))
+pub fn new_tt_table() -> HashMap<u64, TtEntry> {
+    HashMap::<u64, TtEntry>::new()
 }
 
+#[allow(dead_code)]
 pub fn find_move_fen(fen: String, depth: u8, num_threads: u8) -> (String, f32) {
     match Board::from_fen(&fen){
         Ok(board) => {

@@ -3,12 +3,7 @@ use crate::utils;
 
 use pleco::{BitMove, Board, Player};
 
-use std::sync::{Arc, Mutex, RwLock};
 use std::collections::HashMap;
-use std::thread;
-use std::time;
-
-use dashmap::DashMap;
 
 const DELTA_PRUNING_DIFF: f32 = 200.;
 const NULL_MOVE_DEPTH_REDUCTION: u8 = 2;
@@ -117,15 +112,14 @@ pub fn alpha_beta(
     color: Player,
     mut alpha: f32,
     mut beta: f32,
-    tt_table: &mut Arc<RwLock<HashMap<u64, TtEntry>>>,
+    tt_table: &mut HashMap<u64, TtEntry>,
     do_null: bool,
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
     let zobrist = board.zobrist();
     let alphaorig = alpha;
 
-    let table = tt_table.read().unwrap();
-    match table.get(&zobrist) {
+    match tt_table.get(&zobrist) {
         Some(tt_entry) => {
             if tt_entry.depth >= depth {
                 let flag = &tt_entry.flag;
@@ -143,7 +137,6 @@ pub fn alpha_beta(
         }
         None => {}
     }
-    drop(table);
 
     if depth == 0 || board.checkmate() || moves.is_empty() {
         return (BitMove::null(), quiesce(board, 10, color, alpha, beta));
@@ -218,27 +211,15 @@ pub fn alpha_beta(
         value,
     };
 
-    tt_table.write().unwrap().insert(zobrist, entry);
+    tt_table.insert(zobrist, entry);
 
     (best_move, alpha)
 }
 
-pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) -> (BitMove, f32) {
-    let transposition_table = utils::new_tt_table();
-    let mut threads = vec![];
-    for i in 0..n_threads {
-        let mut tt = transposition_table.clone();
-        let b = board.parallel_clone();
+pub fn search_parallel(board: Board, depth: u8, color: Player, _n_threads: u8) -> (BitMove, f32) {
+    let mut transposition_table = utils::new_tt_table();
+    let b = board.parallel_clone();
 
-        threads.push(thread::spawn(move || {
-            let mv = alpha_beta(b, depth, color, -9999.0, 9999.0, &mut tt, true);
-            mv
-        }));
-    }
-
-    let mut max = (BitMove::null(), 0.);
-    for t in threads {
-        max = t.join().unwrap();
-    }
-    max
+    let mv = alpha_beta(b, depth, color, -9999.0, 9999.0, &mut transposition_table, true);
+    mv
 }
