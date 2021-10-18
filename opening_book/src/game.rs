@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
-use pleco::Board;
+use pleco::{Board, Player};
 use std::fs::File;
 use std::io::{self};
 
 use crate::moves;
+use crate::utils::GameBook;
 
 fn split_event(event: String) -> (String, String) {
     let mut idx = 0;
@@ -20,11 +21,7 @@ fn split_event(event: String) -> (String, String) {
     (String::new(), String::new())
 }
 
-fn handle_game(
-    game: HashMap<String, String>,
-    db: &mut HashMap<(u64, String), u64>,
-    num_moves: usize,
-) -> Option<()> {
+fn handle_game(game: HashMap<String, String>, db: &mut GameBook, num_moves: usize) -> Option<()> {
     let mut board = Board::start_pos();
     let moves = game.get("moves")?.split(" ");
 
@@ -58,21 +55,20 @@ fn handle_game(
             }
         };
 
-        let valid = board.apply_uci_move(&uci_move);
+        board.apply_move(uci_move);
 
-        if valid {
-            let hash = board.zobrist();
-            let mut count = 1;
-            match db.get(&(hash, uci_move.clone())) {
-                Some(c) => {
-                    count = c + 1;
-                }
-                None => {}
-            }
-            db.insert((hash, uci_move.clone()), count);
-        } else {
-            break;
-        }
+        let hash = board.zobrist();
+        let count = match db.get(&(hash, uci_move.get_raw())) {
+            Some((c, _)) => c + 1,
+            None => 1,
+        };
+
+        let turn = match board.turn() {
+            Player::White => false,
+            Player::Black => true,
+        };
+
+        db.insert((hash, uci_move.get_raw()), (count, turn));
     }
 
     Some(())
@@ -80,7 +76,7 @@ fn handle_game(
 
 pub fn play_through_file(
     file: io::Lines<io::BufReader<File>>,
-    db: &mut HashMap<(u64, String), u64>,
+    db: &mut GameBook,
     num_moves: usize,
 ) {
     let mut game = HashMap::<String, String>::new();

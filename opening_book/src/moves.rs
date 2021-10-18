@@ -1,6 +1,6 @@
 use pleco::board::piece_locations::PieceLocations;
 use pleco::core::{sq::SQ, File, PieceType, Rank};
-use pleco::{BitBoard, Board, Player};
+use pleco::{BitBoard, BitMove, Board, Player};
 
 fn get_rank(r: i8) -> Rank {
     match r {
@@ -63,39 +63,52 @@ fn find_start_square(
     piece: PieceType,
     player: Player,
     attackers: BitBoard,
-) -> Option<String> {
+) -> Option<SQ> {
     for (p_sq, p) in pieces {
         if p.type_of() == piece && p.player_lossy() == player {
             if (attackers & p_sq.to_bb()).count_bits() == 1 {
-                return Some(p_sq.to_string());
+                return Some(p_sq);
             }
         }
     }
     None
 }
 
-pub fn algebraic_to_uci_move(mv: &str, board: &Board) -> Option<String> {
+pub fn algebraic_to_uci_move(mv: &str, board: &Board) -> Option<BitMove> {
     let player = board.turn();
     let mv = mv.replace("+", "");
     if mv.len() == 5 && mv.contains("O") {
-        return match player {
-            Player::White => Some("e1c1".to_string()),
-            Player::Black => Some("e8c8".to_string()),
+        let rank = match player {
+            Player::White => Rank::R1,
+            Player::Black => Rank::R8,
         };
+
+        let src = SQ::make(File::E, rank);
+        let dst = SQ::make(File::C, rank);
+        let bit_mv = BitMove::make(0b0011, src, dst);
+
+        return Some(bit_mv);
+    } else if mv.len() == 3 && mv.contains("O") {
+        let rank = match player {
+            Player::White => Rank::R1,
+            Player::Black => Rank::R8,
+        };
+
+        let src = SQ::make(File::E, rank);
+        let dst = SQ::make(File::G, rank);
+        let bit_mv = BitMove::make(0b0001, src, dst);
+
+        return Some(bit_mv);
     } else if mv.contains("#") {
         //checkmate
         let new_move = &mv[0..(mv.len() - 1)];
         let uci_move = algebraic_to_uci_move(new_move, board);
         return uci_move;
-    } else if mv.len() == 3 && mv.contains("O") {
-        return match player {
-            Player::White => Some("e1g1".to_string()),
-            Player::Black => Some("e8g8".to_string()),
-        };
     } else if mv.len() == 2 {
+        //Pawn push
         let (num, original_rank) = parse_rank(&mv);
         let file = get_file(&mv);
-        let og_square = SQ::make(file, original_rank);
+        let dst = SQ::make(file, original_rank);
 
         let sign = match player {
             Player::White => -1,
@@ -108,15 +121,32 @@ pub fn algebraic_to_uci_move(mv: &str, board: &Board) -> Option<String> {
 
             let piece = board.piece_at_sq(sq);
             if piece.player_lossy() == player && piece.type_of() == PieceType::P {
-                let uci_move = format!("{}{}", sq.to_string(), og_square.to_string());
-                return Some(uci_move);
+                let bt_move = BitMove::make_pawn_push(sq, dst);
+                return Some(bt_move);
             }
         }
     } else if mv.len() > 2 && mv.chars().nth(mv.len() - 2).unwrap() == '=' {
         let new_move = &mv[0..(mv.len() - 2)];
-        let promotion_piece = mv.chars().nth(mv.len() - 1)?.to_lowercase();
-        let uci_move = algebraic_to_uci_move(new_move, board)?;
-        return Some(format!("{}{}", uci_move, promotion_piece));
+        let promotion_piece = mv.chars().nth(mv.len() - 1)?;
+        let base_mv = algebraic_to_uci_move(new_move, board)?;
+
+        let mut bit = match promotion_piece {
+            'N' => 0b1000,
+            'B' => 0b1001,
+            'R' => 0b1010,
+            'Q' => 0b1011,
+            _ => 0b1011,
+        };
+
+        if mv.contains("x") {
+            bit = bit | 0b0100;
+        }
+
+        let dst = base_mv.get_dest();
+        let src = base_mv.get_src();
+        let bt_mv = BitMove::make(bit, src, dst);
+
+        return Some(bt_mv);
     } else {
         let rank = get_rank(mv[(mv.len() - 1)..].parse::<i8>().unwrap());
         let file = get_file(&mv[(mv.len() - 2)..(mv.len() - 1)]);
@@ -142,8 +172,11 @@ pub fn algebraic_to_uci_move(mv: &str, board: &Board) -> Option<String> {
             }
         }
 
+        let bit = if mv.contains("x") { 0b0100 } else { 0b0000 };
+
         let start_sq = find_start_square(pieces, piece, player, attackers)?;
-        return Some(format!("{}{}", start_sq, sq.to_string()));
+        let bt_mv = BitMove::make(bit, start_sq, sq);
+        return Some(bt_mv);
     }
     None
 }
