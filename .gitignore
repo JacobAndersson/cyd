@@ -5,4 +5,4 @@ node_modules
 *.sw[op]
 /cyd_lichess/cyd
 *.pgn
-*/opening_book.json
+opening_book.json

@@ -19,7 +19,7 @@ pub struct Config {
     #[clap(short, long, default_value = "")]
     pub moves: String,
 
-    #[clap(short, long)]
+    #[clap(long)]
     pub debug: bool
 }
 

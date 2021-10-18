@@ -9,17 +9,17 @@ const DELTA_PRUNING_DIFF: f32 = 200.;
 const NULL_MOVE_DEPTH_REDUCTION: u8 = 2;
 
 #[derive(PartialEq)]
-enum EntryFlag {
+pub enum EntryFlag {
     Exact,
     LowerBound,
     UpperBound,
 }
 
 pub struct TtEntry {
-    mv: BitMove,
-    depth: u8,
-    flag: EntryFlag,
-    value: f32,
+    pub mv: BitMove,
+    pub depth: u8,
+    pub flag: EntryFlag,
+    pub value: f32,
 }
 
 fn color_value(player: Player) -> f32 {

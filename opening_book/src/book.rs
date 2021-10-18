@@ -46,7 +46,7 @@ pub fn build_opening_book(db: GameBook) -> OpeningBook {
 
     for (zobrist, values) in interim_book.iter() {
         let (mv, count, player) = find_most_common_move(values);
-        if count > 10 {
+        if count > 30 {
             opening_book.insert(*zobrist, (mv, player));
         }
     }
