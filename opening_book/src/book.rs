@@ -1,4 +1,3 @@
-use serde_json;
 use std::collections::HashMap;
 
 use std::fs::File;
@@ -24,7 +23,7 @@ fn build_interim_book(db: GameBook) -> HashMap<u64, Vec<(u16, u64, bool)>> {
     iterim_book
 }
 
-fn find_most_common_move(values: &Vec<(u16, u64, bool)>) -> (u16, u64, bool) {
+fn find_most_common_move(values: &[(u16, u64, bool)]) -> (u16, u64, bool) {
     let mut mv = 0b0;
     let mut count = 0;
     let mut flag = false;

@@ -65,10 +65,8 @@ fn find_start_square(
     attackers: BitBoard,
 ) -> Option<SQ> {
     for (p_sq, p) in pieces {
-        if p.type_of() == piece && p.player_lossy() == player {
-            if (attackers & p_sq.to_bb()).count_bits() == 1 {
-                return Some(p_sq);
-            }
+        if p.type_of() == piece && p.player_lossy() == player && (attackers & p_sq.to_bb()).count_bits() == 1 {
+            return Some(p_sq);
         }
     }
     None
@@ -77,7 +75,7 @@ fn find_start_square(
 pub fn algebraic_to_uci_move(mv: &str, board: &Board) -> Option<BitMove> {
     let player = board.turn();
     let mv = mv.replace("+", "");
-    if mv.len() == 5 && mv.contains("O") {
+    if mv.len() == 5 && mv.contains('O') {
         let rank = match player {
             Player::White => Rank::R1,
             Player::Black => Rank::R8,
@@ -88,7 +86,7 @@ pub fn algebraic_to_uci_move(mv: &str, board: &Board) -> Option<BitMove> {
         let bit_mv = BitMove::make(0b0011, src, dst);
 
         return Some(bit_mv);
-    } else if mv.len() == 3 && mv.contains("O") {
+    } else if mv.len() == 3 && mv.contains('O') {
         let rank = match player {
             Player::White => Rank::R1,
             Player::Black => Rank::R8,
@@ -99,7 +97,7 @@ pub fn algebraic_to_uci_move(mv: &str, board: &Board) -> Option<BitMove> {
         let bit_mv = BitMove::make(0b0001, src, dst);
 
         return Some(bit_mv);
-    } else if mv.contains("#") {
+    } else if mv.contains('#') {
         //checkmate
         let new_move = &mv[0..(mv.len() - 1)];
         let uci_move = algebraic_to_uci_move(new_move, board);
@@ -138,8 +136,8 @@ pub fn algebraic_to_uci_move(mv: &str, board: &Board) -> Option<BitMove> {
             _ => 0b1011,
         };
 
-        if mv.contains("x") {
-            bit = bit | 0b0100;
+        if mv.contains('x') {
+            bit |= 0b0100;
         }
 
         let dst = base_mv.get_dest();
@@ -157,22 +155,22 @@ pub fn algebraic_to_uci_move(mv: &str, board: &Board) -> Option<BitMove> {
         let mut attackers = board.attackers_to(sq, occupied_map);
         let pieces = board.get_piece_locations();
 
-        if mv.len() == 4 && !mv.contains("x") {
+        if mv.len() == 4 && !mv.contains('c') {
             let identifier = mv.chars().nth(1)?;
 
             match identifier.to_digit(10) {
                 Some(r) => {
                     let start_rank = get_rank(r as i8);
-                    attackers = attackers & start_rank.bb();
+                    attackers &= start_rank.bb();
                 }
                 None => {
                     let start_file = get_file(&String::from(identifier));
-                    attackers = attackers & start_file.bb();
+                    attackers &= start_file.bb();
                 }
             }
         }
 
-        let bit = if mv.contains("x") { 0b0100 } else { 0b0000 };
+        let bit = if mv.contains('x') { 0b0100 } else { 0b0000 };
 
         let start_sq = find_start_square(pieces, piece, player, attackers)?;
         let bt_mv = BitMove::make(bit, start_sq, sq);

@@ -8,22 +8,20 @@ use crate::moves;
 use crate::utils::GameBook;
 
 fn split_event(event: String) -> (String, String) {
-    let mut idx = 0;
-    for c in event.chars() {
+    for (idx, c) in event.chars().enumerate() {
         if c == ' ' {
             let name = event[0..idx].to_string();
             let value = event[idx..].to_string().replace("\"", "");
 
             return (name, value);
         }
-        idx += 1;
     }
     (String::new(), String::new())
 }
 
 fn handle_game(game: HashMap<String, String>, db: &mut GameBook, num_moves: usize) -> Option<()> {
     let mut board = Board::start_pos();
-    let moves = game.get("moves")?.split(" ");
+    let moves = game.get("moves")?.split(' ');
 
     for (idx, mut mv) in moves.enumerate() {
         if idx > num_moves {
@@ -32,16 +30,16 @@ fn handle_game(game: HashMap<String, String>, db: &mut GameBook, num_moves: usiz
 
         if mv.len() == 1 {
             break;
-        } else if mv.contains(".") && mv.len() < 4 {
+        } else if mv.contains('.') && mv.len() < 4 {
             //filter move numbers
             continue;
-        } else if mv.contains(".") {
-            let idx = mv.find(".")?;
+        } else if mv.contains('.') {
+            let idx = mv.find('.')?;
             mv = &mv[(idx)..];
             if mv.len() < 2 {
                 break;
             }
-        } else if mv.contains("-") && (mv.contains("0") || mv.contains("1")) {
+        } else if mv.contains('-') && (mv.contains('0') || mv.contains('1')) {
             break;
         }
 
@@ -89,7 +87,7 @@ pub fn play_through_file(
             game = HashMap::new();
         }
 
-        if line != "\n" && line != "" {
+        if line != "\n" && !line.is_empty(){
             if &line[0..1] == "[" {
                 let event = &line[1..(line.len() - 1)];
                 let (name, value) = split_event(event.to_string());
