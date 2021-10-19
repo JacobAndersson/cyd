@@ -1,12 +1,9 @@
-use crate::search::{TtEntry, EntryFlag};
 use std::collections::HashMap;
+use std::fs;
 use pleco::{Board, BitMove};
 
-use serde_json;
-
-use std::fs;
-
 use crate::search;
+use crate::search::{TtEntry, EntryFlag};
 
 fn parse_opening_book() -> Result<HashMap<u64, TtEntry>, std::io::Error> {
     let file = fs::read_to_string("../opening_book.json")?;
@@ -44,7 +41,7 @@ pub fn find_move_fen(fen: String, depth: u8, num_threads: u8) -> (String, f32) {
     match Board::from_fen(&fen){
         Ok(board) => {
             let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), num_threads);
-            return (mv.stringify(), score);
+            (mv.stringify(), score)
         },
         Err(_) => ("".to_string(),0.)
     }
@@ -53,13 +50,13 @@ pub fn find_move_fen(fen: String, depth: u8, num_threads: u8) -> (String, f32) {
 pub fn find_move(moves: String, depth: u8, num_threads: u8) -> (String, f32) {
     let mut board = Board::start_pos();
 
-    let mvs = moves.split(" ");
+    let mvs = moves.split(' ');
     for mv in mvs {
         board.apply_uci_move(mv);
     }
 
     let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), num_threads);
-    return (mv.stringify(), score);
+    (mv.stringify(), score)
 }
 
 #[allow(dead_code)]

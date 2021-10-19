@@ -23,10 +23,10 @@ pub struct TtEntry {
 }
 
 fn color_value(player: Player) -> f32 {
-    return match player {
+    match player {
         Player::White => 1.,
         Player::Black => -1.,
-    };
+    }
 }
 
 #[allow(dead_code)] //For benchmarks
@@ -56,11 +56,11 @@ pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
 
 fn score_move(mv: &BitMove) -> u32 {
     if mv.is_capture() {
-        return 10;
+        10
    } else if mv.is_quiet_move() {
-        return 0;
+        0
    } else {
-        return 5;
+        5
    }
 }
 
@@ -103,7 +103,7 @@ fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32
             alpha = score;
         }
     }
-    return alpha;
+    alpha
 }
 
 pub fn alpha_beta(
@@ -119,23 +119,20 @@ pub fn alpha_beta(
     let zobrist = board.zobrist();
     let alphaorig = alpha;
 
-    match tt_table.get(&zobrist) {
-        Some(tt_entry) => {
-            if tt_entry.depth >= depth {
-                let flag = &tt_entry.flag;
-                if flag == &EntryFlag::Exact {
-                    return (tt_entry.mv, tt_entry.value);
-                } else if flag == &EntryFlag::LowerBound {
-                    alpha = alpha.max(tt_entry.value);
-                } else if flag == &EntryFlag::UpperBound {
-                    beta = beta.min(tt_entry.value);
-                }
-                if alpha >= beta {
-                    return (tt_entry.mv, tt_entry.value);
-                }
+    if let Some(tt_entry) = tt_table.get(&zobrist) {
+        if tt_entry.depth >= depth {
+            let flag = &tt_entry.flag;
+            if flag == &EntryFlag::Exact {
+                return (tt_entry.mv, tt_entry.value);
+            } else if flag == &EntryFlag::LowerBound {
+                alpha = alpha.max(tt_entry.value);
+            } else if flag == &EntryFlag::UpperBound {
+                beta = beta.min(tt_entry.value);
+            }
+            if alpha >= beta {
+                return (tt_entry.mv, tt_entry.value);
             }
         }
-        None => {}
     }
 
     if depth == 0 || board.checkmate() || moves.is_empty() {
@@ -205,7 +202,7 @@ pub fn alpha_beta(
     }
 
     let entry = TtEntry {
-        mv: best_move.clone(),
+        mv: best_move,
         depth,
         flag,
         value,
@@ -220,6 +217,5 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, _n_threads: u8) -
     let mut transposition_table = utils::new_tt_table();
     let b = board.parallel_clone();
 
-    let mv = alpha_beta(b, depth, color, -9999.0, 9999.0, &mut transposition_table, true);
-    mv
+    alpha_beta(b, depth, color, -9999.0, 9999.0, &mut transposition_table, true)
 }

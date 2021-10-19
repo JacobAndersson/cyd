@@ -1,7 +1,7 @@
 use pleco::{Board, PieceType, Player};
 
 pub fn piece_values(piece: PieceType) -> f32 {
-    return match piece {
+    match piece {
         PieceType::P => 100.,
         PieceType::N => 280.,
         PieceType::B => 320.,
@@ -10,11 +10,11 @@ pub fn piece_values(piece: PieceType) -> f32 {
         PieceType::K => 60_000.,
         PieceType::None => 0.,
         PieceType::All => 0.,
-    };
+    }
 }
 
 fn count_piece_material(board: &Board, player: Player, piece: PieceType) -> f32 {
-    return piece_values(piece) * board.count_piece(player, piece) as f32;
+    piece_values(piece) * board.count_piece(player, piece) as f32
 }
 
 fn material_count_side(board: &Board, player: Player) -> f32 {
@@ -39,7 +39,7 @@ fn piece_square_table(board: &Board) -> f32 {
 fn pinned_pieces(board: &Board) -> f32 {
     let wp = board.pieces_pinned(Player::White).count_bits() as f32;
     let bp = board.pieces_pinned(Player::Black).count_bits() as f32;
-    return bp - wp; 
+    bp - wp
 }
 
 pub fn eval(board: &Board) -> f32 {
