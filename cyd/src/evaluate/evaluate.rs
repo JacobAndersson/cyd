@@ -1,4 +1,5 @@
 use pleco::{Board, PieceType, Player};
+use pleco::helper::Helper;
 
 pub fn piece_values(piece: PieceType) -> f32 {
     match piece {
@@ -42,6 +43,18 @@ fn pinned_pieces(board: &Board) -> f32 {
     bp - wp
 }
 
+
+fn king_safety(board: &Board, player: Player) -> f32 {
+    let king = board.king_sq(player);  
+
+    let helper = Helper::new();
+
+    let around = helper.ring_distance(king, 1);
+    let occupied = board.get_occupied_player(player);
+
+    (around & occupied).count_bits() as f32
+}
+
 pub fn eval(board: &Board) -> f32 {
     if board.checkmate() {
         let turn: f32 = match &board.turn() {
@@ -55,7 +68,10 @@ pub fn eval(board: &Board) -> f32 {
     let psq = piece_square_table(board);
     let pinned = pinned_pieces(board);
 
-    material + 0.2 * psq + 0.1 * pinned
+    let king_safety_white = king_safety(board, Player::White);
+    let king_safety_black = king_safety(board, Player::Black);
+
+    material + 0.5 * psq + 10.*pinned + 2.*(king_safety_white - king_safety_black)
 }
 
 #[cfg(test)]
