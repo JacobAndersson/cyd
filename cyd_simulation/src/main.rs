@@ -25,6 +25,9 @@ fn play_game(white_params: EvalParameters, black_params: EvalParameters, mv: &st
         };
 
         let (mv, _) = alpha_beta(board.clone(), DEPTH, player, -9999., 9999., &mut tt_table, true, &Some(params));
+        if mv.to_string() == "a1a1" {
+            break;
+        }
         board.apply_move(mv);
     }
 
