@@ -32,7 +32,7 @@ fn color_value(player: Player) -> f32 {
 #[allow(dead_code)] //For benchmarks
 pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
     if depth == 0 {
-        return (BitMove::null(), color_value(color) * eval(&board));
+        return (BitMove::null(), color_value(color) * eval(&board, None));
     }
 
     let mut max = -999999.;
@@ -65,7 +65,7 @@ fn score_move(mv: &BitMove) -> u32 {
 }
 
 fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32) -> f32 {
-    let standpat = color_value(color) * eval(&board);
+    let standpat = color_value(color) * eval(&board, None);
     if depth == 0 {
         return standpat;
     } else if standpat >= beta {
