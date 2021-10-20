@@ -1,4 +1,4 @@
-use crate::evaluate::eval;
+use crate::evaluate::{eval, EvalParameters};
 use crate::utils;
 
 use pleco::{BitMove, Board, Player};
@@ -32,7 +32,7 @@ fn color_value(player: Player) -> f32 {
 #[allow(dead_code)] //For benchmarks
 pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
     if depth == 0 {
-        return (BitMove::null(), color_value(color) * eval(&board, None));
+        return (BitMove::null(), color_value(color) * eval(&board, &None));
     }
 
     let mut max = -999999.;
@@ -64,8 +64,8 @@ fn score_move(mv: &BitMove) -> u32 {
    }
 }
 
-fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32) -> f32 {
-    let standpat = color_value(color) * eval(&board, None);
+fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32, eval_params: &Option<EvalParameters>) -> f32 {
+    let standpat = color_value(color) * eval(&board, eval_params);
     if depth == 0 {
         return standpat;
     } else if standpat >= beta {
@@ -94,6 +94,7 @@ fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32
             color.other_player(),
             -beta,
             -alpha,
+            eval_params
         );
         board.undo_move();
 
@@ -114,6 +115,7 @@ pub fn alpha_beta(
     mut beta: f32,
     tt_table: &mut HashMap<u64, TtEntry>,
     do_null: bool,
+    eval_params: &Option<EvalParameters>
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
     let zobrist = board.zobrist();
@@ -136,7 +138,7 @@ pub fn alpha_beta(
     }
 
     if depth == 0 || board.checkmate() || moves.is_empty() {
-        return (BitMove::null(), quiesce(board, 10, color, alpha, beta));
+        return (BitMove::null(), quiesce(board, 10, color, alpha, beta, eval_params));
     }
 
     if do_null 
@@ -156,6 +158,7 @@ pub fn alpha_beta(
                 -beta + 1.,
                 tt_table,
                 false,
+                eval_params
             );
             score = -score;
             board.undo_null_move();
@@ -176,6 +179,7 @@ pub fn alpha_beta(
             -alpha,
             tt_table,
             true,
+            eval_params
         );
         board.undo_move();
         score = -score;
@@ -217,5 +221,5 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, _n_threads: u8) -
     let mut transposition_table = utils::new_tt_table();
     let b = board.parallel_clone();
 
-    alpha_beta(b, depth, color, -9999.0, 9999.0, &mut transposition_table, true)
+    alpha_beta(b, depth, color, -9999.0, 9999.0, &mut transposition_table, true, &None)
 }

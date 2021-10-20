@@ -1,0 +1,11 @@
+[package]
+name = "cyd_simulation"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+cyd = { path = "../cyd" }
+clap = "3.0.0-beta.4"
+pleco = "0.5.0"
+rand = "0.8.4"
+rand_distr = "0.4.2"

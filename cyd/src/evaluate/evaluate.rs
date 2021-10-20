@@ -1,6 +1,7 @@
 use pleco::{Board, PieceType, Player};
 use pleco::helper::Helper;
 
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct EvalParameters {
     pub psq: f32,
     pub pinned: f32,
@@ -70,7 +71,7 @@ fn king_safety(board: &Board, player: Player) -> f32 {
     (around & occupied).count_bits() as f32
 }
 
-fn eval_raw(board: &Board, params: EvalParameters ) -> f32 {
+fn eval_raw(board: &Board, params: &EvalParameters ) -> f32 {
     if board.checkmate() {
         let turn: f32 = match &board.turn() {
             Player::White => 1.0,
@@ -90,10 +91,10 @@ fn eval_raw(board: &Board, params: EvalParameters ) -> f32 {
     material + psq + pinned + k_safety 
 }
 
-pub fn eval(board: &Board, params: Option<EvalParameters>) -> f32 {
+pub fn eval(board: &Board, params: &Option<EvalParameters>) -> f32 {
     match params {
         Some(p) => eval_raw(board, p),
-        None => eval_raw(board, EvalParameters::default())
+        None => eval_raw(board, &EvalParameters::default())
     }
 }
 
@@ -134,13 +135,13 @@ mod eval_test {
     #[test]
     fn checkmate_white() {
         let board = Board::from_fen("4R2k/6pp/8/2p5/6n1/5B2/4PPPP/2K4R b - - 0 1").unwrap();
-        assert_eq!(9999.0, eval(&board, None));
+        assert_eq!(9999.0, eval(&board, &None));
     }
 
     #[test]
     fn checkmate_black() {
         let board = Board::from_fen("3k4/8/8/8/8/8/P7/K1q5 w - - 0 1").unwrap();
-        assert_eq!(-9999.0, eval(&board, None));
+        assert_eq!(-9999.0, eval(&board, &None));
     }
 
 
@@ -161,5 +162,4 @@ mod eval_test {
         let p4 = pinned_pieces(&b4);
         assert_eq!(p4, -3.0);
     }
-
 }

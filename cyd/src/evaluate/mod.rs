@@ -2,3 +2,4 @@
 mod evaluate;
 
 pub use evaluate::eval;
+pub use evaluate::EvalParameters;
