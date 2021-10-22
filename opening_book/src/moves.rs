@@ -65,7 +65,10 @@ fn find_start_square(
     attackers: BitBoard,
 ) -> Option<SQ> {
     for (p_sq, p) in pieces {
-        if p.type_of() == piece && p.player_lossy() == player && (attackers & p_sq.to_bb()).count_bits() == 1 {
+        if p.type_of() == piece
+            && p.player_lossy() == player
+            && (attackers & p_sq.to_bb()).count_bits() == 1
+        {
             return Some(p_sq);
         }
     }

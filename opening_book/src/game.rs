@@ -87,7 +87,7 @@ pub fn play_through_file(
             game = HashMap::new();
         }
 
-        if line != "\n" && !line.is_empty(){
+        if line != "\n" && !line.is_empty() {
             if &line[0..1] == "[" {
                 let event = &line[1..(line.len() - 1)];
                 let (name, value) = split_event(event.to_string());

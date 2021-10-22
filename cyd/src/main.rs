@@ -1,7 +1,7 @@
+mod cli;
 mod evaluate;
 mod search;
 mod utils;
-mod cli;
 
 extern crate clap;
 

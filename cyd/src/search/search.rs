@@ -53,18 +53,24 @@ pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
     (best_move, max)
 }
 
-
 fn score_move(mv: &BitMove) -> u32 {
     if mv.is_capture() {
         10
-   } else if mv.is_quiet_move() {
+    } else if mv.is_quiet_move() {
         0
-   } else {
+    } else {
         5
-   }
+    }
 }
 
-fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32, eval_params: &Option<EvalParameters>) -> f32 {
+fn quiesce(
+    mut board: Board,
+    depth: u8,
+    color: Player,
+    mut alpha: f32,
+    beta: f32,
+    eval_params: &Option<EvalParameters>,
+) -> f32 {
     let standpat = color_value(color) * eval(&board, eval_params);
     if depth == 0 {
         return standpat;
@@ -78,7 +84,11 @@ fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32
         return alpha;
     }
 
-    let mut moves: Vec<(BitMove, u32)> = board.generate_moves().into_iter().map(|mv| (mv, score_move(&mv))).collect();
+    let mut moves: Vec<(BitMove, u32)> = board
+        .generate_moves()
+        .into_iter()
+        .map(|mv| (mv, score_move(&mv)))
+        .collect();
     moves.sort_by(|a, b| (a.1).cmp(&b.1));
 
     for (mv, _) in moves {
@@ -94,7 +104,7 @@ fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32
             color.other_player(),
             -beta,
             -alpha,
-            eval_params
+            eval_params,
         );
         board.undo_move();
 
@@ -107,6 +117,7 @@ fn quiesce(mut board: Board, depth: u8, color: Player, mut alpha: f32, beta: f32
     alpha
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn alpha_beta(
     mut board: Board,
     depth: u8,
@@ -115,7 +126,7 @@ pub fn alpha_beta(
     mut beta: f32,
     tt_table: &mut HashMap<u64, TtEntry>,
     do_null: bool,
-    eval_params: &Option<EvalParameters>
+    eval_params: &Option<EvalParameters>,
 ) -> (BitMove, f32) {
     let moves = board.generate_moves();
     let zobrist = board.zobrist();
@@ -138,10 +149,13 @@ pub fn alpha_beta(
     }
 
     if depth == 0 || board.checkmate() || moves.is_empty() {
-        return (BitMove::null(), quiesce(board, 10, color, alpha, beta, eval_params));
+        return (
+            BitMove::null(),
+            quiesce(board, 10, color, alpha, beta, eval_params),
+        );
     }
 
-    if do_null 
+    if do_null
         && !board.in_check()
         && board.ply() > 0
         && depth > NULL_MOVE_DEPTH_REDUCTION + 1
@@ -158,7 +172,7 @@ pub fn alpha_beta(
                 -beta + 1.,
                 tt_table,
                 false,
-                eval_params
+                eval_params,
             );
             score = -score;
             board.undo_null_move();
@@ -179,7 +193,7 @@ pub fn alpha_beta(
             -alpha,
             tt_table,
             true,
-            eval_params
+            eval_params,
         );
         board.undo_move();
         score = -score;
@@ -221,5 +235,14 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, _n_threads: u8) -
     let mut transposition_table = utils::new_tt_table();
     let b = board.parallel_clone();
 
-    alpha_beta(b, depth, color, -9999.0, 9999.0, &mut transposition_table, true, &None)
+    alpha_beta(
+        b,
+        depth,
+        color,
+        -9999.0,
+        9999.0,
+        &mut transposition_table,
+        true,
+        &None,
+    )
 }

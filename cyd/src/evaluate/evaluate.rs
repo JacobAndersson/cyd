@@ -1,5 +1,5 @@
-use pleco::{Board, PieceType, Player};
 use pleco::helper::Helper;
+use pleco::{Board, PieceType, Player};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct EvalParameters {
@@ -13,7 +13,7 @@ impl Default for EvalParameters {
         EvalParameters {
             psq: 0.5,
             pinned: 10.,
-            king_safety: 2.
+            king_safety: 2.,
         }
     }
 }
@@ -61,7 +61,7 @@ fn pinned_pieces(board: &Board) -> f32 {
 }
 
 fn king_safety(board: &Board, player: Player) -> f32 {
-    let king = board.king_sq(player);  
+    let king = board.king_sq(player);
 
     let helper = Helper::new();
 
@@ -71,7 +71,7 @@ fn king_safety(board: &Board, player: Player) -> f32 {
     (around & occupied).count_bits() as f32
 }
 
-fn eval_raw(board: &Board, params: &EvalParameters ) -> f32 {
+fn eval_raw(board: &Board, params: &EvalParameters) -> f32 {
     if board.checkmate() {
         let turn: f32 = match &board.turn() {
             Player::White => 1.0,
@@ -86,15 +86,15 @@ fn eval_raw(board: &Board, params: &EvalParameters ) -> f32 {
 
     let king_safety_white = king_safety(board, Player::White);
     let king_safety_black = king_safety(board, Player::Black);
-    let k_safety = params.king_safety*(king_safety_white - king_safety_black);
+    let k_safety = params.king_safety * (king_safety_white - king_safety_black);
 
-    material + psq + pinned + k_safety 
+    material + psq + pinned + k_safety
 }
 
 pub fn eval(board: &Board, params: &Option<EvalParameters>) -> f32 {
     match params {
         Some(p) => eval_raw(board, p),
-        None => eval_raw(board, &EvalParameters::default())
+        None => eval_raw(board, &EvalParameters::default()),
     }
 }
 
@@ -143,7 +143,6 @@ mod eval_test {
         let board = Board::from_fen("3k4/8/8/8/8/8/P7/K1q5 w - - 0 1").unwrap();
         assert_eq!(-9999.0, eval(&board, &None));
     }
-
 
     #[test]
     fn test_pinned_pieces() {

@@ -18,8 +18,16 @@ mod search_test {
         for _i in 0..plies {
             let mut tt = utils::new_tt_table();
 
-            let (mv, _score) =
-                alpha_beta(board.clone(), depth, board.turn(), -9999.0, 9999.0, &mut tt, true, &None);
+            let (mv, _score) = alpha_beta(
+                board.clone(),
+                depth,
+                board.turn(),
+                -9999.0,
+                9999.0,
+                &mut tt,
+                true,
+                &None,
+            );
             println!("{}", &mv.stringify());
             board.apply_move(mv)
         }
@@ -150,7 +158,6 @@ mod search_test {
         assert_eq!("e2e3", found_move2);
     }
 
-    
     #[test]
     #[ignore]
     fn mate_in_four() {
