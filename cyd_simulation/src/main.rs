@@ -7,7 +7,7 @@ use cyd::{alpha_beta, new_tt_table, EvalParameters};
 use rand_distr::{Distribution, Normal};
 use rand::thread_rng;
 
-const DEPTH: u8 = 5;
+const DEPTH: u8 = 3;
 
 struct ParameterRands {
     psq: Normal<f32>,
