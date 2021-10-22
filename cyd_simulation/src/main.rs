@@ -54,13 +54,13 @@ fn battle(param1: EvalParameters, param2: EvalParameters) -> EvalParameters {
         threads.push(thread::spawn(move || {
             let mut p1 = 0;
             let mut p2 = 0;
-            match play_game(param1, param2, &mv) {
+            match play_game(param1, param2, mv) {
                 Some(Player::White) => p1 += 1,
                 Some(Player::Black) => p2 += 1,
                 None => {}
             };
 
-            match play_game(param2, param1, &mv) {
+            match play_game(param2, param1, mv) {
                 Some(Player::White) => p2 += 1,
                 Some(Player::Black) => p1 += 1,
                 None => {}
