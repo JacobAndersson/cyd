@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use std::fs;
 use crate::search::{EntryFlag, TtEntry};
 use pleco::BitMove;
+use std::collections::HashMap;
+use std::fs;
 
 fn parse_opening_book() -> Result<HashMap<u64, TtEntry>, std::io::Error> {
     let file = fs::read_to_string("../opening_book.json")?;

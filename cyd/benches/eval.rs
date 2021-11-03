@@ -1,5 +1,5 @@
 extern crate cyd;
-use cyd::eval;
+use cyd::evaluate::eval;
 use std::time::Duration;
 
 use criterion::{criterion_group, Criterion};
@@ -15,7 +15,7 @@ fn eval_pos(c: &mut Criterion) {
         let board = Board::from_fen(fen).unwrap();
 
         c.bench_function(format!("Evaluating fen {}", fen).as_str(), |b| {
-            b.iter(|| eval(&board))
+            b.iter(|| eval(&board, &None))
         });
     }
 }

@@ -21,6 +21,9 @@ pub struct Config {
 
     #[clap(long)]
     pub debug: bool,
+
+    #[clap(long)]
+    pub alive: bool,
 }
 
 pub fn get_config() -> Config {
