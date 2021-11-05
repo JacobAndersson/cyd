@@ -1,7 +1,10 @@
 use std::thread;
 use std::time::Instant;
 
-use cyd::{alpha_beta, new_tt_table, EvalParameters};
+use cyd::evaluate::EvalParameters;
+use cyd::search::alpha_beta;
+use cyd::utils::new_tt_table;
+
 use pleco::{Board, Player};
 
 use rand::thread_rng;
