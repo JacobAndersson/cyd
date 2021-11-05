@@ -1,7 +1,6 @@
 extern crate cyd;
-use cyd::utils::new_tt_table;
 use cyd::search::{alpha_beta, nega_max};
-
+use cyd::utils::new_tt_table;
 
 use criterion::{criterion_group, Criterion};
 use pleco::{Board, Player};
@@ -57,7 +56,7 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
                         9999.0,
                         &mut tt,
                         true,
-                        &None
+                        &None,
                     )
                 })
             },
@@ -76,7 +75,7 @@ fn play_game(mut board: Board, depth: u8) {
             9999.,
             &mut tt,
             true,
-            &None
+            &None,
         );
         board.apply_move(mv);
     }
