@@ -87,7 +87,20 @@ pub fn keep_alive(moves: String, depth: u8) {
     }
 
     while !check_if_game_over(&board) {
-        let (mv, _) = search::alpha_beta(
+        let new_mv = get_move(100);
+        if new_mv == "stop" {
+            break;
+        }
+
+        if !new_mv.is_empty() && new_mv != "con" {
+            let valid = board.apply_uci_move(&new_mv);
+
+            if !valid {
+                break;
+            }
+        }
+
+        let (mv, score) = search::alpha_beta(
             board.clone(),
             depth,
             board.turn(),
@@ -97,17 +110,8 @@ pub fn keep_alive(moves: String, depth: u8) {
             true,
             &None,
         );
+        println!("move{},{}", mv, score);
+
         board.apply_move(mv);
-
-        let new_mv = get_move(100);
-        if new_mv == "stop" {
-            break;
-        }
-
-        let valid = board.apply_uci_move(&new_mv);
-
-        if !valid {
-            break;
-        }
     }
 }
