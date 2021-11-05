@@ -1,5 +1,5 @@
-const axios = require("axios");
-const { TOKEN } = require("./env.js")
+const axios = require('axios');
+const { TOKEN } = require('./env.js');
 
 function streamMoves(id, handler) {
   axios
@@ -7,35 +7,36 @@ function streamMoves(id, handler) {
       headers: {
         Authorization: `Bearer ${TOKEN}`,
       },
-      responseType: "stream",
+      responseType: 'stream',
     })
     .then((response) => {
       response.data.pipe(handler);
     })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
     });
 }
 
-function postMove(gameId, move){
+function postMove(gameId, move) {
   axios
-    .post(`https://lichess.org/api/bot/game/${gameId}/move/${move}`,{}, {
-      headers: {
-        Authorization: `Bearer ${TOKEN}`,
+    .post(
+      `https://lichess.org/api/bot/game/${gameId}/move/${move}`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
       }
+    )
+    .then(() => {
+      console.log('Succesfully made move');
     })
-    .then((response) => {
-      console.log("Succesfully made move");
-    })
-    .catch(err => {
+    .catch((err) => {
       console.error(err);
     });
 }
-
 
 module.exports = {
-  postMove, 
+  postMove,
   streamMoves,
-  getMove,
-  spawnProcess,
-}
+};
