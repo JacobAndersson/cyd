@@ -128,7 +128,6 @@ pub fn alpha_beta(
     do_null: bool,
     eval_params: &Option<EvalParameters>,
 ) -> (BitMove, f32) {
-    let moves = board.generate_moves();
     let zobrist = board.zobrist();
     let alphaorig = alpha;
 
@@ -148,12 +147,20 @@ pub fn alpha_beta(
         }
     }
 
+    let mut moves: Vec<(BitMove, u32)> = board
+        .generate_moves()
+        .into_iter()
+        .map(|mv| (mv, score_move(&mv)))
+        .collect();
+
     if depth == 0 || board.checkmate() || moves.is_empty() {
         return (
             BitMove::null(),
             quiesce(board, 10, color, alpha, beta, eval_params),
         );
     }
+
+    moves.sort_by(|a, b| (a.1).cmp(&b.1));
 
     if do_null
         && !board.in_check()
@@ -183,7 +190,7 @@ pub fn alpha_beta(
     }
 
     let mut best_move = BitMove::null();
-    for mv in moves {
+    for (mv, _) in moves {
         board.apply_move(mv);
         let (_, mut score) = alpha_beta(
             board.shallow_clone(),

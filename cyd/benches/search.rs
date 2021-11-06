@@ -93,8 +93,8 @@ fn play_through_game(c: &mut Criterion) {
 
 criterion_group!(
     search_benches,
-    nega_max_start_pos,
     alpha_beta_start_pos,
     alpha_beta_queen_take,
-    play_through_game
+    play_through_game,
+    nega_max_start_pos,
 );
