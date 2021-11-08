@@ -1,0 +1,10 @@
+opening_book/*
+cyd_simulation/*
+*/target/*
+/cyd_lichess/cyd
+opening_book.json
+*/pkg/*
+*.pgn
+*.sw[op]
+.git/*
+.env
