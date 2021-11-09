@@ -125,8 +125,12 @@ class cyd {
   }
 
   makeMove(moves) {
-    let lastMove = moves.split(' ').pop() || 'con';
-    this.process.stdin.write(lastMove + '\n');
+    if (moves) {
+      let lastMove = moves.split(' ').pop() || 'con';
+      this.process.stdin.write(lastMove + '\n');
+    } else {
+      this.process.stdin.write('con\n'); 
+    }
   }
 
   async sleep(msec) {
