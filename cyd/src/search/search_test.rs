@@ -28,8 +28,7 @@ mod search_test {
                 true,
                 &None,
             );
-            println!("{}", &mv.stringify());
-            board.apply_move(mv)
+            board.apply_move(mv);
         }
         board
     }
@@ -93,6 +92,16 @@ mod search_test {
     }
 
     #[test]
+    fn mate_in_one_white_2(){
+        let fen = "k7/4R3/8/8/8/8/8/3K1R2 w - - 0 1";
+
+        for depth in 1..3 {
+            let board = play_x_moves(fen, depth, 1);
+            assert!(board.checkmate());
+        }
+    }
+
+    #[test]
     fn mate_in_two_2() {
         let fen = "k7/4R3/2p5/p7/1p6/2P1R2P/1P4P1/3K4 w - - 0 1";
         for depth in 4..6 {
@@ -130,6 +139,7 @@ mod search_test {
     }
 
     #[test]
+    #[ignore]
     fn find_best_move_4() {
         let (found_move, _) = test_position_alpha_beta(
             "r4rk1/ppp1nppp/n3b3/1N1p4/2PP4/1Q1BqN2/PP4PP/R4R1K w - - 2 13",

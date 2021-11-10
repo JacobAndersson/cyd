@@ -29,6 +29,41 @@ fn color_value(player: Player) -> f32 {
     }
 }
 
+fn score_move(mv: &BitMove, board: &Board) -> u32 {
+    if board.gives_check(*mv) {
+        20
+    } else if mv.is_capture() {
+        10
+    } else if mv.is_quiet_move() {
+        0
+    } else {
+        5
+    }
+}
+
+fn generate_scored_moves(board: &Board, tt_table: &HashMap<u64, TtEntry>) -> Vec<(BitMove, u32)> {
+    let pv_move = tt_table.get(&board.zobrist());
+
+    let mut moves: Vec<(BitMove, u32)> = board
+        .generate_moves()
+        .into_iter()
+        .map(|mv| (mv, score_move(&mv, board)))
+        .collect();
+
+    if let Some(tt_entry) = pv_move {
+        moves = moves.into_iter().map(|mv| {
+            if mv.0 == tt_entry.mv {
+                (mv.0, 1000)
+            } else {
+                mv
+            }
+        }).collect()
+    }
+
+    moves.sort_by(|a, b| (b.1).cmp(&a.1));
+    moves
+}
+
 #[allow(dead_code)] //For benchmarks
 pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
     if depth == 0 {
@@ -53,15 +88,7 @@ pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
     (best_move, max)
 }
 
-fn score_move(mv: &BitMove) -> u32 {
-    if mv.is_capture() {
-        10
-    } else if mv.is_quiet_move() {
-        0
-    } else {
-        5
-    }
-}
+
 
 fn quiesce(
     mut board: Board,
@@ -70,6 +97,7 @@ fn quiesce(
     mut alpha: f32,
     beta: f32,
     eval_params: &Option<EvalParameters>,
+    tt_table: &HashMap<u64, TtEntry>
 ) -> f32 {
     let standpat = color_value(color) * eval(&board, eval_params);
     if depth == 0 {
@@ -83,13 +111,7 @@ fn quiesce(
     if standpat < alpha - DELTA_PRUNING_DIFF {
         return alpha;
     }
-
-    let mut moves: Vec<(BitMove, u32)> = board
-        .generate_moves()
-        .into_iter()
-        .map(|mv| (mv, score_move(&mv)))
-        .collect();
-    moves.sort_by(|a, b| (a.1).cmp(&b.1));
+    let moves = generate_scored_moves(&board, tt_table);
 
     for (mv, _) in moves {
         //Should be possible to only generate capturing moves. Problem with check
@@ -105,6 +127,7 @@ fn quiesce(
             -beta,
             -alpha,
             eval_params,
+            tt_table
         );
         board.undo_move();
 
@@ -118,7 +141,7 @@ fn quiesce(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn alpha_beta(
+pub fn _alpha_beta(
     mut board: Board,
     depth: u8,
     color: Player,
@@ -147,20 +170,33 @@ pub fn alpha_beta(
         }
     }
 
+    let moves = generate_scored_moves(&board, tt_table);
+    /*
     let mut moves: Vec<(BitMove, u32)> = board
         .generate_moves()
         .into_iter()
         .map(|mv| (mv, score_move(&mv)))
         .collect();
+    moves.sort_by(|a, b| (b.1).cmp(&a.1));
+
+    if let Some(tt_entry) = pv_move{
+        moves = moves.into_iter().map(|mv| {
+            if mv.0 == tt_entry.mv {
+                (mv.0, 1000)
+            } else {
+                mv
+            }
+        }).collect()
+    }
+    */
 
     if depth == 0 || board.checkmate() || moves.is_empty() {
         return (
             BitMove::null(),
-            quiesce(board, 10, color, alpha, beta, eval_params),
+            quiesce(board, 10, color, alpha, beta, eval_params, tt_table),
         );
     }
 
-    moves.sort_by(|a, b| (a.1).cmp(&b.1));
 
     if do_null
         && !board.in_check()
@@ -171,7 +207,7 @@ pub fn alpha_beta(
     {
         unsafe {
             board.apply_null_move();
-            let (_, mut score) = alpha_beta(
+            let (_, mut score) = _alpha_beta(
                 board.shallow_clone(),
                 depth - 1 - NULL_MOVE_DEPTH_REDUCTION,
                 color.other_player(),
@@ -192,7 +228,7 @@ pub fn alpha_beta(
     let mut best_move = BitMove::null();
     for (mv, _) in moves {
         board.apply_move(mv);
-        let (_, mut score) = alpha_beta(
+        let (_, mut score) = _alpha_beta(
             board.shallow_clone(),
             depth - 1,
             color.other_player(),
@@ -202,8 +238,15 @@ pub fn alpha_beta(
             true,
             eval_params,
         );
+
+
+
         board.undo_move();
         score = -score;
+
+        if depth == 8 {
+            println!("{} {}", mv, score);
+        }
 
         if score >= beta {
             return (mv, beta);
@@ -237,6 +280,31 @@ pub fn alpha_beta(
 
     (best_move, alpha)
 }
+
+#[allow(clippy::too_many_arguments)]
+pub fn alpha_beta(
+    board: Board,
+    depth: u8,
+    color: Player,
+    alpha: f32,
+    beta: f32,
+    tt_table: &mut HashMap<u64, TtEntry>,
+    do_null: bool,
+    eval_params: &Option<EvalParameters>,
+) -> (BitMove, f32) {
+    let mut mv = BitMove::null();
+    let mut latest_score: f32 = 0.;
+    
+    for d in 1..(depth + 2) {
+        let (m, sc) = _alpha_beta(board.clone(), d, color, alpha, beta, tt_table, do_null, eval_params);
+        println!("{} {} {}", d, m, sc);
+        mv = m;
+        latest_score = sc;
+    }
+
+    (mv, latest_score)
+}
+
 
 pub fn search_parallel(board: Board, depth: u8, color: Player, _n_threads: u8) -> (BitMove, f32) {
     let mut transposition_table = utils::new_tt_table();
