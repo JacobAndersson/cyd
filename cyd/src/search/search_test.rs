@@ -92,7 +92,7 @@ mod search_test {
     }
 
     #[test]
-    fn mate_in_one_white_2(){
+    fn mate_in_one_white_2() {
         let fen = "k7/4R3/8/8/8/8/8/3K1R2 w - - 0 1";
 
         for depth in 1..3 {
