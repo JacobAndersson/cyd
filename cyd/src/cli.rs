@@ -1,33 +1,34 @@
-use clap::Clap;
+//use clap::Clap;
+use structopt::StructOpt;
 
-#[derive(Clap, Debug)]
-#[clap(name = "hello")]
+#[derive(StructOpt, Debug)]
+#[structopt(name = "hello")]
 pub struct Config {
     /// Fen to start search from, if empty start pos is used
-    #[clap(short, long, default_value = "")]
+    #[structopt(short, long, default_value = "")]
     pub fen: String,
 
     /// Depth to search
-    #[clap(short, long, default_value = "5")]
+    #[structopt(short, long, default_value = "5")]
     pub depth: u8,
 
     /// Number of threads to use
-    #[clap(short, long, default_value = "1")]
+    #[structopt(short, long, default_value = "1")]
     pub num_threads: u8,
 
     ///Moves, comma seperated
-    #[clap(short, long, default_value = "")]
+    #[structopt(short, long, default_value = "")]
     pub moves: String,
 
-    #[clap(long)]
+    #[structopt(long)]
     pub debug: bool,
 
-    #[clap(long)]
+    #[structopt(long)]
     pub alive: bool,
 }
 
 pub fn get_config() -> Config {
-    let mut config = Config::parse();
+    let mut config = Config::from_args();
     if config.fen.is_empty() {
         config.fen = String::from("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     }
