@@ -2,6 +2,7 @@ use crate::evaluate::{eval, EvalParameters};
 use crate::utils;
 use crate::search::transposition_table::{TtEntry, EntryFlag, TranspositionTable};
 use pleco::{BitMove, Board, Player};
+use std::thread;
 
 const DELTA_PRUNING_DIFF: i64 = 200;
 const NULL_MOVE_DEPTH_REDUCTION: u8 = 2;
@@ -272,18 +273,34 @@ pub fn alpha_beta(
     (mv, latest_score)
 }
 
-pub fn search_parallel(board: Board, depth: u8, color: Player, _n_threads: u8) -> (BitMove, i64) {
-    let mut transposition_table = utils::new_tt_table();
-    let b = board.parallel_clone();
+pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) -> (BitMove, i64) {
+    let transposition_table = utils::new_tt_table();
+    
+    let mut threads = Vec::new();
+    for _ in 0..n_threads {
+        let b = board.parallel_clone();
+        let mut tt_table = transposition_table.clone();
+        let handle = thread::spawn(move || {
+            alpha_beta(
+                b,
+                depth,
+                color,
+                -9999,
+                9999,
+                &mut tt_table,
+                true,
+                &None,
+            )
+        });
+        threads.push(handle);
+    }
 
-    alpha_beta(
-        b,
-        depth,
-        color,
-        -9999,
-        9999,
-        &mut transposition_table,
-        true,
-        &None,
-    )
+    let mut best_mv = BitMove::null();
+    let mut best_score = 0;
+    for t in threads {
+        let (mv, s) = t.join().unwrap();
+        best_mv = mv;
+        best_score = s;
+    }
+    (best_mv, best_score)
 }

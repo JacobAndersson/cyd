@@ -1,7 +1,5 @@
 use crate::search;
 use pleco::Board;
-
-use crate::utils;
 use std::{io, thread, time};
 
 #[allow(dead_code)]
@@ -77,9 +75,8 @@ pub fn check_if_game_over(board: &Board) -> bool {
     board.checkmate() || board.rule_50() == 50 || board.stalemate() || !board.is_ok_quick()
 }
 
-pub fn keep_alive(moves: String, depth: u8) {
+pub fn keep_alive(moves: String, depth: u8, num_threads: u8) {
     let mut board = Board::start_pos();
-    let mut transposition_table = utils::new_tt_table();
 
     let mvs = moves.split(' ');
     for mv in mvs {
@@ -100,15 +97,11 @@ pub fn keep_alive(moves: String, depth: u8) {
             }
         }
 
-        let (mv, score) = search::alpha_beta(
+        let (mv, score) = search::search_parallel(
             board.clone(),
             depth,
             board.turn(),
-            -9999,
-            9999,
-            &mut transposition_table,
-            true,
-            &None,
+            num_threads
         );
         println!("move{},{}", mv, score);
 

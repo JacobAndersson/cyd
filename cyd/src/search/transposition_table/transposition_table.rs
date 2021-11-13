@@ -1,10 +1,12 @@
 use evmap;
 use crate::search::transposition_table::TtEntry;
+use std::clone::Clone;
+use std::sync::{Arc, Mutex};
 
 
 pub struct TranspositionTable {
     reader: evmap::ReadHandle<u64, TtEntry>,
-    writer: evmap::WriteHandle<u64, TtEntry>
+    writer: Arc<Mutex<evmap::WriteHandle<u64, TtEntry>>>
 }
 
 impl TranspositionTable {
@@ -12,7 +14,7 @@ impl TranspositionTable {
         let (r, w) = evmap::new::<u64, TtEntry>();
         TranspositionTable {
             reader: r,
-            writer: w
+            writer: Arc::new(Mutex::new(w))
         }
     }
 
@@ -21,15 +23,27 @@ impl TranspositionTable {
     }
 
     pub fn insert(&mut self, key: u64, val: TtEntry) {
-        self.writer.insert(key, val);
-        self.writer.refresh();
+        let mut writer = self.writer.lock().unwrap();
+        writer.insert(key, val);
+        writer.refresh();
     }
 
     pub fn insert_no_refresh(&mut self, key: u64, val: TtEntry) {
-        self.writer.insert(key, val);
+        let mut writer = self.writer.lock().unwrap();
+        writer.insert(key, val);
     }
 
     pub fn refresh(&mut self) {
-        self.writer.refresh();
+        let mut writer = self.writer.lock().unwrap();
+        writer.refresh();
+    }
+}
+
+impl Clone for TranspositionTable {
+    fn clone(&self) -> Self {
+        Self {
+            writer: self.writer.clone(),
+            reader: self.reader.clone()
+        }
     }
 }
