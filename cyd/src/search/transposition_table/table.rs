@@ -38,6 +38,12 @@ impl TranspositionTable {
     }
 }
 
+impl Default for TranspositionTable {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Clone for TranspositionTable {
     fn clone(&self) -> Self {
         Self {

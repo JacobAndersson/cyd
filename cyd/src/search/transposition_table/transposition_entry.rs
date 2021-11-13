@@ -35,7 +35,7 @@ impl Hash for TtEntry {
 impl ShallowCopy for TtEntry {
     unsafe fn shallow_copy(&self) -> ManuallyDrop<Self> {
         ManuallyDrop::new(Self {
-            mv: self.mv.clone(),
+            mv: self.mv,
             depth: ManuallyDrop::into_inner(ShallowCopy::shallow_copy(&self.depth)),
             flag: ManuallyDrop::into_inner(ShallowCopy::shallow_copy(&self.flag)),
             value: ManuallyDrop::into_inner(ShallowCopy::shallow_copy(&self.value)),
