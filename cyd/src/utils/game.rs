@@ -5,18 +5,18 @@ use crate::utils;
 use std::{io, thread, time};
 
 #[allow(dead_code)]
-pub fn find_move_fen(fen: String, depth: u8, num_threads: u8) -> (String, f32) {
+pub fn find_move_fen(fen: String, depth: u8, num_threads: u8) -> (String, i64) {
     match Board::from_fen(&fen) {
         Ok(board) => {
             let (mv, score) =
                 search::search_parallel(board.clone(), depth, board.turn(), num_threads);
             (mv.stringify(), score)
         }
-        Err(_) => ("".to_string(), 0.),
+        Err(_) => ("".to_string(), 0),
     }
 }
 
-pub fn find_move(moves: String, depth: u8, num_threads: u8) -> (String, f32) {
+pub fn find_move(moves: String, depth: u8, num_threads: u8) -> (String, i64) {
     let mut board = Board::start_pos();
 
     let mvs = moves.split(' ');
@@ -104,8 +104,8 @@ pub fn keep_alive(moves: String, depth: u8) {
             board.clone(),
             depth,
             board.turn(),
-            -9999.0,
-            9999.0,
+            -9999,
+            9999,
             &mut transposition_table,
             true,
             &None,

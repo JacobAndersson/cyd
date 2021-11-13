@@ -4,11 +4,11 @@ mod search_test {
     use crate::utils;
     use pleco::Board;
 
-    fn test_position_alpha_beta(fen: &str, depth: u8) -> (String, f32) {
+    fn test_position_alpha_beta(fen: &str, depth: u8) -> (String, i64) {
         let mut tt = utils::new_tt_table();
         let board = Board::from_fen(fen).unwrap();
         let player = board.turn();
-        let (mv, score) = alpha_beta(board, depth, player, -9999.0, 9999.0, &mut tt, true, &None);
+        let (mv, score) = alpha_beta(board, depth, player, -9999, 9999, &mut tt, true, &None);
         println!("depth: {}, move: {}, score: {}", depth, mv, score);
         (String::from(mv.stringify()), score)
     }
@@ -22,8 +22,8 @@ mod search_test {
                 board.clone(),
                 depth,
                 board.turn(),
-                -9999.0,
-                9999.0,
+                -9999,
+                9999,
                 &mut tt,
                 true,
                 &None,
@@ -174,7 +174,7 @@ mod search_test {
         let fen = "r4r1k/1R1R2p1/7p/8/8/3Q1Ppq/P7/6K1 w - - 0 1";
         let (mv, score) = test_position_alpha_beta(fen, 7);
         assert_eq!("d3h7", mv);
-        assert!(score > 9000.);
+        assert!(score > 9000);
     }
 
     #[test]
@@ -183,6 +183,6 @@ mod search_test {
         let fen = "4r1k1/1pb3pp/2p5/p2p4/P2P4/2B1rBqP/1P3QP1/3K1R2 w - - 4 27";
         let (mv, score) = test_position_alpha_beta(fen, 7);
         assert_eq!("f3d5", mv);
-        assert!(score > 9000.);
+        assert!(score > 9000);
     }
 }

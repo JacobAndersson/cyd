@@ -1,18 +1,18 @@
-use crate::search::{EntryFlag, TtEntry};
+use crate::search::transposition_table::{EntryFlag, TtEntry, TranspositionTable};
 use pleco::BitMove;
 use std::collections::HashMap;
 use std::fs;
 
-fn parse_opening_book() -> Result<HashMap<u64, TtEntry>, std::io::Error> {
+fn parse_opening_book() -> Result<TranspositionTable, std::io::Error> {
     let file = fs::read_to_string("../opening_book.json")?;
     let interim_book: HashMap<u64, (u16, bool)> = serde_json::from_str(&file)?;
 
-    let mut book = HashMap::<u64, TtEntry>::new();
+    let mut book = TranspositionTable::new();
 
     for (zobrist, (mv, player)) in interim_book {
-        let value = match player {
-            true => 999.,
-            false => -999.,
+        let value: i64 = match player {
+            true => 999,
+            false => -999,
         };
         let entry = TtEntry {
             mv: BitMove::new(mv),
@@ -21,15 +21,16 @@ fn parse_opening_book() -> Result<HashMap<u64, TtEntry>, std::io::Error> {
             value,
         };
 
-        book.insert(zobrist, entry);
+        book.insert_no_refresh(zobrist, entry);
     }
+    book.refresh();
 
     Ok(book)
 }
 
-pub fn new_tt_table() -> HashMap<u64, TtEntry> {
+pub fn new_tt_table() -> TranspositionTable {
     match parse_opening_book() {
         Ok(b) => b,
-        Err(_) => HashMap::<u64, TtEntry>::new(),
+        Err(_) => TranspositionTable::new(),
     }
 }

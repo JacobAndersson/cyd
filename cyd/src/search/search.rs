@@ -1,31 +1,15 @@
 use crate::evaluate::{eval, EvalParameters};
 use crate::utils;
-
+use crate::search::transposition_table::{TtEntry, EntryFlag, TranspositionTable};
 use pleco::{BitMove, Board, Player};
 
-use std::collections::HashMap;
-
-const DELTA_PRUNING_DIFF: f32 = 200.;
+const DELTA_PRUNING_DIFF: i64 = 200;
 const NULL_MOVE_DEPTH_REDUCTION: u8 = 2;
 
-#[derive(PartialEq)]
-pub enum EntryFlag {
-    Exact,
-    LowerBound,
-    UpperBound,
-}
-
-pub struct TtEntry {
-    pub mv: BitMove,
-    pub depth: u8,
-    pub flag: EntryFlag,
-    pub value: f32,
-}
-
-fn color_value(player: Player) -> f32 {
+fn color_value(player: Player) -> i64 {
     match player {
-        Player::White => 1.,
-        Player::Black => -1.,
+        Player::White => 1,
+        Player::Black => -1,
     }
 }
 
@@ -41,7 +25,7 @@ fn score_move(mv: &BitMove, board: &Board) -> u32 {
     }
 }
 
-fn generate_scored_moves(board: &Board, tt_table: &HashMap<u64, TtEntry>) -> Vec<(BitMove, u32)> {
+fn generate_scored_moves(board: &Board, tt_table: &TranspositionTable) -> Vec<(BitMove, u32)> {
     let pv_move = tt_table.get(&board.zobrist());
 
     let mut moves: Vec<(BitMove, u32)> = board
@@ -68,12 +52,12 @@ fn generate_scored_moves(board: &Board, tt_table: &HashMap<u64, TtEntry>) -> Vec
 }
 
 #[allow(dead_code)] //For benchmarks
-pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, f32) {
+pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, i64) {
     if depth == 0 {
         return (BitMove::null(), color_value(color) * eval(&board, &None));
     }
 
-    let mut max = -999999.;
+    let mut max: i64 = -999999;
     let mut best_move = BitMove::null();
 
     for mv in board.generate_moves() {
@@ -95,11 +79,11 @@ fn quiesce(
     mut board: Board,
     depth: u8,
     color: Player,
-    mut alpha: f32,
-    beta: f32,
+    mut alpha: i64,
+    beta: i64,
     eval_params: &Option<EvalParameters>,
-    tt_table: &HashMap<u64, TtEntry>,
-) -> f32 {
+    tt_table: &mut TranspositionTable,
+) -> i64 {
     let standpat = color_value(color) * eval(&board, eval_params);
     if depth == 0 {
         return standpat;
@@ -146,12 +130,12 @@ pub fn _alpha_beta(
     mut board: Board,
     depth: u8,
     color: Player,
-    mut alpha: f32,
-    mut beta: f32,
-    tt_table: &mut HashMap<u64, TtEntry>,
+    mut alpha: i64,
+    mut beta: i64,
+    tt_table: &mut TranspositionTable,
     do_null: bool,
     eval_params: &Option<EvalParameters>,
-) -> (BitMove, f32) {
+) -> (BitMove, i64) {
     let zobrist = board.zobrist();
     let alphaorig = alpha;
 
@@ -172,25 +156,6 @@ pub fn _alpha_beta(
     }
 
     let moves = generate_scored_moves(&board, tt_table);
-    /*
-    let mut moves: Vec<(BitMove, u32)> = board
-        .generate_moves()
-        .into_iter()
-        .map(|mv| (mv, score_move(&mv)))
-        .collect();
-    moves.sort_by(|a, b| (b.1).cmp(&a.1));
-
-    if let Some(tt_entry) = pv_move{
-        moves = moves.into_iter().map(|mv| {
-            if mv.0 == tt_entry.mv {
-                (mv.0, 1000)
-            } else {
-                mv
-            }
-        }).collect()
-    }
-    */
-
     if depth == 0 || board.checkmate() || moves.is_empty() {
         return (
             BitMove::null(),
@@ -212,7 +177,7 @@ pub fn _alpha_beta(
                 depth - 1 - NULL_MOVE_DEPTH_REDUCTION,
                 color.other_player(),
                 -beta,
-                -beta + 1.,
+                -beta + 1,
                 tt_table,
                 false,
                 eval_params,
@@ -280,14 +245,14 @@ pub fn alpha_beta(
     board: Board,
     depth: u8,
     color: Player,
-    alpha: f32,
-    beta: f32,
-    tt_table: &mut HashMap<u64, TtEntry>,
+    alpha: i64,
+    beta: i64,
+    tt_table: &mut TranspositionTable,
     do_null: bool,
     eval_params: &Option<EvalParameters>,
-) -> (BitMove, f32) {
+) -> (BitMove, i64) {
     let mut mv = BitMove::null();
-    let mut latest_score: f32 = 0.;
+    let mut latest_score: i64 = 0;
 
     for d in 1..(depth + 2) {
         let (m, sc) = _alpha_beta(
@@ -307,7 +272,7 @@ pub fn alpha_beta(
     (mv, latest_score)
 }
 
-pub fn search_parallel(board: Board, depth: u8, color: Player, _n_threads: u8) -> (BitMove, f32) {
+pub fn search_parallel(board: Board, depth: u8, color: Player, _n_threads: u8) -> (BitMove, i64) {
     let mut transposition_table = utils::new_tt_table();
     let b = board.parallel_clone();
 
@@ -315,8 +280,8 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, _n_threads: u8) -
         b,
         depth,
         color,
-        -9999.0,
-        9999.0,
+        -9999,
+        9999,
         &mut transposition_table,
         true,
         &None,
