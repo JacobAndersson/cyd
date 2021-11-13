@@ -97,12 +97,7 @@ pub fn keep_alive(moves: String, depth: u8, num_threads: u8) {
             }
         }
 
-        let (mv, score) = search::search_parallel(
-            board.clone(),
-            depth,
-            board.turn(),
-            num_threads
-        );
+        let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), num_threads);
         println!("move{},{}", mv, score);
 
         board.apply_move(mv);

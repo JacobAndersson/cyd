@@ -1,4 +1,4 @@
-use crate::search::transposition_table::{EntryFlag, TtEntry, TranspositionTable};
+use crate::search::transposition_table::{EntryFlag, TranspositionTable, TtEntry};
 use pleco::BitMove;
 use std::collections::HashMap;
 use std::fs;

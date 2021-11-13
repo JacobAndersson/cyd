@@ -1,7 +1,7 @@
 use crate::search::transposition_table::EntryFlag;
-use std::hash::{Hash, Hasher};
-use pleco::BitMove;
 use evmap::ShallowCopy;
+use pleco::BitMove;
+use std::hash::{Hash, Hasher};
 use std::mem::ManuallyDrop;
 
 #[derive(Clone, Copy)]
@@ -14,12 +14,14 @@ pub struct TtEntry {
 
 impl PartialEq for TtEntry {
     fn eq(&self, other: &Self) -> bool {
-        self.mv == other.mv && self.depth == other.depth && self.flag == other.flag && self.value == other.value
+        self.mv == other.mv
+            && self.depth == other.depth
+            && self.flag == other.flag
+            && self.value == other.value
     }
 }
 
-impl Eq for TtEntry { }
-
+impl Eq for TtEntry {}
 
 impl Hash for TtEntry {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -36,7 +38,7 @@ impl ShallowCopy for TtEntry {
             mv: self.mv.clone(),
             depth: ManuallyDrop::into_inner(ShallowCopy::shallow_copy(&self.depth)),
             flag: ManuallyDrop::into_inner(ShallowCopy::shallow_copy(&self.flag)),
-            value: ManuallyDrop::into_inner(ShallowCopy::shallow_copy(&self.value))
+            value: ManuallyDrop::into_inner(ShallowCopy::shallow_copy(&self.value)),
         })
     }
 }

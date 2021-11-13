@@ -1,6 +1,6 @@
 use crate::evaluate::{eval, EvalParameters};
+use crate::search::transposition_table::{EntryFlag, TranspositionTable, TtEntry};
 use crate::utils;
-use crate::search::transposition_table::{TtEntry, EntryFlag, TranspositionTable};
 use pleco::{BitMove, Board, Player};
 use std::thread;
 
@@ -275,22 +275,13 @@ pub fn alpha_beta(
 
 pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) -> (BitMove, i64) {
     let transposition_table = utils::new_tt_table();
-    
+
     let mut threads = Vec::new();
     for _ in 0..n_threads {
         let b = board.parallel_clone();
         let mut tt_table = transposition_table.clone();
         let handle = thread::spawn(move || {
-            alpha_beta(
-                b,
-                depth,
-                color,
-                -9999,
-                9999,
-                &mut tt_table,
-                true,
-                &None,
-            )
+            alpha_beta(b, depth, color, -9999, 9999, &mut tt_table, true, &None)
         });
         threads.push(handle);
     }
