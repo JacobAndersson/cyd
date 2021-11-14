@@ -8,3 +8,7 @@ node_modules
 opening_book.json
 .env
 notes.md
+
+perf.data
+perf.data.old
+flamegraph.svg

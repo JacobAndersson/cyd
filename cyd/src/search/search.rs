@@ -275,8 +275,8 @@ pub fn alpha_beta(
 
 pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) -> (BitMove, i64) {
     let transposition_table = utils::new_tt_table();
-
     let mut threads = Vec::new();
+
     for _ in 0..n_threads {
         let b = board.parallel_clone();
         let mut tt_table = transposition_table.clone();
@@ -293,5 +293,6 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) ->
         best_mv = mv;
         best_score = s;
     }
+    println!("table size {}", transposition_table.len());
     (best_mv, best_score)
 }

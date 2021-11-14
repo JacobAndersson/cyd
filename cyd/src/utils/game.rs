@@ -2,7 +2,6 @@ use crate::search;
 use pleco::Board;
 use std::{io, thread, time};
 
-#[allow(dead_code)]
 pub fn find_move_fen(fen: String, depth: u8, num_threads: u8) -> (String, i64) {
     match Board::from_fen(&fen) {
         Ok(board) => {

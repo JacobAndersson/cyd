@@ -1,16 +1,21 @@
 use crate::search::transposition_table::TtEntry;
 use evmap;
+use fnv;
+
 use std::clone::Clone;
 use std::sync::{Arc, Mutex};
+use std::hash::BuildHasherDefault;
 
 pub struct TranspositionTable {
-    reader: evmap::ReadHandle<u64, TtEntry>,
-    writer: Arc<Mutex<evmap::WriteHandle<u64, TtEntry>>>,
+    reader: evmap::ReadHandle<u64, TtEntry, (), BuildHasherDefault<fnv::FnvHasher>>,
+    writer: Arc<Mutex<evmap::WriteHandle<u64, TtEntry, (), BuildHasherDefault<fnv::FnvHasher>>>>,
 }
 
 impl TranspositionTable {
     pub fn new() -> TranspositionTable {
-        let (r, w) = evmap::new::<u64, TtEntry>();
+        let opt = evmap::Options::default();
+        let mp = opt.with_hasher(BuildHasherDefault::<fnv::FnvHasher>::default());
+        let (r, w) = mp.construct();
         TranspositionTable {
             reader: r,
             writer: Arc::new(Mutex::new(w)),
@@ -22,6 +27,21 @@ impl TranspositionTable {
     }
 
     pub fn insert(&mut self, key: u64, val: TtEntry) {
+        /*
+        let found_val = self.get(&key);
+        match found_val {
+            Some(value) if value != val => {
+                let mut writer = self.writer.lock().unwrap();
+                writer.insert(key, val);
+                writer.refresh();
+            },
+            None => {
+                let mut writer = self.writer.lock().unwrap();
+                writer.insert(key, val);
+                writer.refresh();
+            }
+        }
+        */
         let mut writer = self.writer.lock().unwrap();
         writer.insert(key, val);
         writer.refresh();
@@ -35,6 +55,10 @@ impl TranspositionTable {
     pub fn refresh(&mut self) {
         let mut writer = self.writer.lock().unwrap();
         writer.refresh();
+    }
+
+    pub fn len(&self) -> usize {
+        self.reader.len()
     }
 }
 
