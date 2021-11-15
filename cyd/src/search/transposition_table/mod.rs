@@ -1,7 +1,7 @@
 mod entry_flag;
-mod transposition_entry;
 mod table;
+mod transposition_entry;
 
 pub use entry_flag::*;
-pub use transposition_entry::*;
 pub use table::TranspositionTable;
+pub use transposition_entry::*;
