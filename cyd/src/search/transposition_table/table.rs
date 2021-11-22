@@ -17,7 +17,7 @@ impl TranspositionTable {
         let opt = evmap::Options::default();
         let mp = opt.with_hasher(BuildHasherDefault::<fnv::FnvHasher>::default());
         let (r, w) = mp.construct();
-        TranspositionTable {
+        Self {
             reader: r,
             writer: Arc::new(Mutex::new(w)),
         }
@@ -32,7 +32,7 @@ impl TranspositionTable {
             mv: value.mv,
             depth: value.depth,
             flag: value.flag,
-            value: value.value
+            value: value.value,
         }
     }
 
@@ -47,7 +47,7 @@ impl TranspositionTable {
                 let mut writer = self.writer.lock().unwrap();
                 writer.insert(key, val);
                 writer.refresh();
-            },
+            }
         }
     }
 

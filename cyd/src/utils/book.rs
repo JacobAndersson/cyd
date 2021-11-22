@@ -10,10 +10,7 @@ fn parse_opening_book() -> Result<TranspositionTable, std::io::Error> {
     let mut book = TranspositionTable::new();
 
     for (zobrist, (mv, player)) in interim_book {
-        let value: i64 = match player {
-            true => 999,
-            false => -999,
-        };
+        let value: i64 = if player { 999 } else { -999 };
         let entry = TtEntry {
             mv: BitMove::new(mv),
             depth: 1,

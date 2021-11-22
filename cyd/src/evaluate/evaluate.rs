@@ -10,7 +10,7 @@ pub struct EvalParameters {
 
 impl Default for EvalParameters {
     fn default() -> Self {
-        EvalParameters {
+        Self {
             psq: 0.5,
             pinned: 10.,
             king_safety: 2.,
@@ -18,7 +18,7 @@ impl Default for EvalParameters {
     }
 }
 
-pub fn piece_values(piece: PieceType) -> f32 {
+pub const fn piece_values(piece: PieceType) -> f32 {
     match piece {
         PieceType::P => 100.,
         PieceType::N => 280.,
@@ -26,8 +26,7 @@ pub fn piece_values(piece: PieceType) -> f32 {
         PieceType::R => 479.,
         PieceType::Q => 929.,
         PieceType::K => 60_000.,
-        PieceType::None => 0.,
-        PieceType::All => 0.,
+        PieceType::None | PieceType::All => 0.,
     }
 }
 

@@ -9,7 +9,9 @@ mod search_test {
         let board = Board::from_fen(fen).unwrap();
         let player = board.turn();
         let timer = Timer::new(1000);
-        let (mv, score) = alpha_beta(board, depth, player, -9999, 9999, &mut tt, true, &None, &timer);
+        let (mv, score) = alpha_beta(
+            board, depth, player, -9999, 9999, &mut tt, true, &None, &timer,
+        );
         println!("depth: {}, move: {}, score: {}", depth, mv, score);
         (String::from(mv.stringify()), score)
     }
@@ -29,7 +31,7 @@ mod search_test {
                 &mut tt,
                 true,
                 &None,
-                &timer
+                &timer,
             );
             board.apply_move(mv);
         }

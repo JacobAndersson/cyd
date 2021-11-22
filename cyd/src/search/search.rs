@@ -8,15 +8,15 @@ use std::thread;
 const DELTA_PRUNING_DIFF: i64 = 200;
 const NULL_MOVE_DEPTH_REDUCTION: u8 = 2;
 
-fn color_value(player: Player) -> i64 {
+const fn color_value(player: Player) -> i64 {
     match player {
         Player::White => 1,
         Player::Black => -1,
     }
 }
 
-fn score_move(mv: &BitMove, board: &Board) -> u32 {
-    if board.gives_check(*mv) {
+fn score_move(mv: BitMove, board: &Board) -> u32 {
+    if board.gives_check(mv) {
         20
     } else if mv.is_capture() {
         10
@@ -33,7 +33,7 @@ fn generate_scored_moves(board: &Board, tt_table: &TranspositionTable) -> Vec<(B
     let mut moves: Vec<(BitMove, u32)> = board
         .generate_moves()
         .into_iter()
-        .map(|mv| (mv, score_move(&mv, board)))
+        .map(|mv| (mv, score_move(mv, board)))
         .collect();
 
     if let Some(tt_entry) = pv_move {
@@ -46,7 +46,7 @@ fn generate_scored_moves(board: &Board, tt_table: &TranspositionTable) -> Vec<(B
                     mv
                 }
             })
-            .collect()
+            .collect();
     }
 
     moves.sort_by(|a, b| (b.1).cmp(&a.1));
@@ -77,6 +77,7 @@ pub fn nega_max(mut board: Board, depth: u8, color: Player) -> (BitMove, i64) {
     (best_move, max)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn quiesce(
     mut board: Board,
     depth: u8,
@@ -85,7 +86,7 @@ fn quiesce(
     beta: i64,
     eval_params: &Option<EvalParameters>,
     tt_table: &mut TranspositionTable,
-    timer: &Timer
+    timer: &Timer,
 ) -> i64 {
     let standpat = color_value(color) * eval(&board, eval_params);
     if depth == 0 {
@@ -116,7 +117,7 @@ fn quiesce(
             -alpha,
             eval_params,
             tt_table,
-            timer
+            timer,
         );
         board.undo_move();
 
@@ -139,7 +140,7 @@ pub fn _alpha_beta(
     tt_table: &mut TranspositionTable,
     do_null: bool,
     eval_params: &Option<EvalParameters>,
-    timer: &Timer
+    timer: &Timer,
 ) -> (BitMove, i64) {
     let zobrist = board.zobrist();
     let alphaorig = alpha;
@@ -186,7 +187,7 @@ pub fn _alpha_beta(
                 tt_table,
                 false,
                 eval_params,
-                timer
+                timer,
             );
             score = -score;
             board.undo_null_move();
@@ -211,7 +212,7 @@ pub fn _alpha_beta(
             tt_table,
             true,
             eval_params,
-            timer
+            timer,
         );
 
         board.undo_move();
@@ -260,7 +261,7 @@ pub fn alpha_beta(
     tt_table: &mut TranspositionTable,
     do_null: bool,
     eval_params: &Option<EvalParameters>,
-    timer: &Timer
+    timer: &Timer,
 ) -> (BitMove, i64) {
     let mut mv = BitMove::null();
     let mut latest_score: i64 = 0;
@@ -275,7 +276,7 @@ pub fn alpha_beta(
             tt_table,
             do_null,
             eval_params,
-            timer
+            timer,
         );
         if timer.elapsed() {
             break;
@@ -287,7 +288,13 @@ pub fn alpha_beta(
     (mv, latest_score)
 }
 
-pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8, max_time: u64) -> (BitMove, i64) {
+pub fn search_parallel(
+    board: Board,
+    depth: u8,
+    color: Player,
+    n_threads: u8,
+    max_time: u64,
+) -> (BitMove, i64) {
     let timer = Timer::new(max_time);
     let transposition_table = utils::new_tt_table();
     let mut threads = Vec::new();
@@ -296,7 +303,17 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8, ma
         let b = board.parallel_clone();
         let mut tt_table = transposition_table.clone();
         let handle = thread::spawn(move || {
-            alpha_beta(b, depth, color, -9999, 9999, &mut tt_table, true, &None, &timer)
+            alpha_beta(
+                b,
+                depth,
+                color,
+                -9999,
+                9999,
+                &mut tt_table,
+                true,
+                &None,
+                &timer,
+            )
         });
         threads.push(handle);
     }

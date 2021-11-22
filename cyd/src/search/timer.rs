@@ -7,10 +7,10 @@ pub struct Timer {
 }
 
 impl Timer {
-    pub fn new(max_time: u64) -> Timer {
-        Timer {
+    pub fn new(max_time: u64) -> Self {
+        Self {
             start: Instant::now(),
-            max_time
+            max_time,
         }
     }
 
