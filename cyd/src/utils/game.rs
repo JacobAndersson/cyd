@@ -3,10 +3,11 @@ use pleco::Board;
 use std::{io, thread, time};
 
 pub fn find_move_fen(fen: String, depth: u8, num_threads: u8) -> (String, i64) {
+    println!("HERE");
     match Board::from_fen(&fen) {
         Ok(board) => {
             let (mv, score) =
-                search::search_parallel(board.clone(), depth, board.turn(), num_threads);
+                search::search_parallel(board.clone(), depth, board.turn(), num_threads, 5);
             (mv.stringify(), score)
         }
         Err(_) => ("".to_string(), 0),
@@ -21,7 +22,7 @@ pub fn find_move(moves: String, depth: u8, num_threads: u8) -> (String, i64) {
         board.apply_uci_move(mv);
     }
 
-    let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), num_threads);
+    let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), num_threads, 20);
     (mv.stringify(), score)
 }
 
@@ -32,7 +33,7 @@ pub fn from_start(depth: u8, n_threads: u8) {
     let mut board = Board::start_pos();
     while !board.checkmate() && board.rule_50() != 50 {
         let mv_start = Instant::now();
-        let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), n_threads);
+        let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), n_threads, 20);
         let end = mv_start.elapsed();
         board.apply_move(mv);
 
@@ -96,7 +97,7 @@ pub fn keep_alive(moves: String, depth: u8, num_threads: u8) {
             }
         }
 
-        let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), num_threads);
+        let (mv, score) = search::search_parallel(board.clone(), depth, board.turn(), num_threads, 20);
         println!("move{},{}", mv, score);
 
         board.apply_move(mv);

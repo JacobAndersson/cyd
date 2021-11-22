@@ -1,5 +1,6 @@
 use crate::evaluate::{eval, EvalParameters};
 use crate::search::transposition_table::{EntryFlag, TranspositionTable, TtEntry};
+use crate::search::Timer;
 use crate::utils;
 use pleco::{BitMove, Board, Player};
 use std::thread;
@@ -84,6 +85,7 @@ fn quiesce(
     beta: i64,
     eval_params: &Option<EvalParameters>,
     tt_table: &mut TranspositionTable,
+    timer: &Timer
 ) -> i64 {
     let standpat = color_value(color) * eval(&board, eval_params);
     if depth == 0 {
@@ -114,6 +116,7 @@ fn quiesce(
             -alpha,
             eval_params,
             tt_table,
+            timer
         );
         board.undo_move();
 
@@ -136,6 +139,7 @@ pub fn _alpha_beta(
     tt_table: &mut TranspositionTable,
     do_null: bool,
     eval_params: &Option<EvalParameters>,
+    timer: &Timer
 ) -> (BitMove, i64) {
     let zobrist = board.zobrist();
     let alphaorig = alpha;
@@ -160,7 +164,7 @@ pub fn _alpha_beta(
     if depth == 0 || board.checkmate() || moves.is_empty() {
         return (
             BitMove::null(),
-            quiesce(board, 10, color, alpha, beta, eval_params, tt_table),
+            quiesce(board, 10, color, alpha, beta, eval_params, tt_table, timer),
         );
     }
 
@@ -182,6 +186,7 @@ pub fn _alpha_beta(
                 tt_table,
                 false,
                 eval_params,
+                timer
             );
             score = -score;
             board.undo_null_move();
@@ -193,6 +198,9 @@ pub fn _alpha_beta(
 
     let mut best_move = BitMove::null();
     for (mv, _) in moves {
+        if timer.elapsed() {
+            break;
+        }
         board.apply_move(mv);
         let (_, mut score) = _alpha_beta(
             board.shallow_clone(),
@@ -203,6 +211,7 @@ pub fn _alpha_beta(
             tt_table,
             true,
             eval_params,
+            timer
         );
 
         board.undo_move();
@@ -251,6 +260,7 @@ pub fn alpha_beta(
     tt_table: &mut TranspositionTable,
     do_null: bool,
     eval_params: &Option<EvalParameters>,
+    timer: &Timer
 ) -> (BitMove, i64) {
     let mut mv = BitMove::null();
     let mut latest_score: i64 = 0;
@@ -265,7 +275,11 @@ pub fn alpha_beta(
             tt_table,
             do_null,
             eval_params,
+            timer
         );
+        if timer.elapsed() {
+            break;
+        }
         mv = m;
         latest_score = sc;
     }
@@ -273,7 +287,8 @@ pub fn alpha_beta(
     (mv, latest_score)
 }
 
-pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) -> (BitMove, i64) {
+pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8, max_time: u64) -> (BitMove, i64) {
+    let timer = Timer::new(max_time);
     let transposition_table = utils::new_tt_table();
     let mut threads = Vec::new();
 
@@ -281,7 +296,7 @@ pub fn search_parallel(board: Board, depth: u8, color: Player, n_threads: u8) ->
         let b = board.parallel_clone();
         let mut tt_table = transposition_table.clone();
         let handle = thread::spawn(move || {
-            alpha_beta(b, depth, color, -9999, 9999, &mut tt_table, true, &None)
+            alpha_beta(b, depth, color, -9999, 9999, &mut tt_table, true, &None, &timer)
         });
         threads.push(handle);
     }

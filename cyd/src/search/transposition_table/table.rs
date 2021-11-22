@@ -13,7 +13,7 @@ pub struct TranspositionTable {
 }
 
 impl TranspositionTable {
-    pub fn new() -> TranspositionTable {
+    pub fn new() -> Self {
         let opt = evmap::Options::default();
         let mp = opt.with_hasher(BuildHasherDefault::<fnv::FnvHasher>::default());
         let (r, w) = mp.construct();
