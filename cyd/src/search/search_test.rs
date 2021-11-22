@@ -8,7 +8,8 @@ mod search_test {
         let mut tt = utils::new_tt_table();
         let board = Board::from_fen(fen).unwrap();
         let player = board.turn();
-        let (mv, score) = alpha_beta(board, depth, player, -9999, 9999, &mut tt, true, &None);
+        let timer = Timer::new(1000);
+        let (mv, score) = alpha_beta(board, depth, player, -9999, 9999, &mut tt, true, &None, &timer);
         println!("depth: {}, move: {}, score: {}", depth, mv, score);
         (String::from(mv.stringify()), score)
     }
@@ -17,6 +18,7 @@ mod search_test {
         let mut board = Board::from_fen(fen).unwrap();
         for _i in 0..plies {
             let mut tt = utils::new_tt_table();
+            let timer = Timer::new(1000);
 
             let (mv, _score) = alpha_beta(
                 board.clone(),
@@ -27,6 +29,7 @@ mod search_test {
                 &mut tt,
                 true,
                 &None,
+                &timer
             );
             board.apply_move(mv);
         }
