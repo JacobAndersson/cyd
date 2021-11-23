@@ -1,5 +1,5 @@
 extern crate cyd;
-use cyd::search::{alpha_beta, nega_max};
+use cyd::search::{alpha_beta, nega_max, Timer};
 use cyd::utils::new_tt_table;
 
 use criterion::{criterion_group, Criterion};
@@ -23,6 +23,7 @@ fn alpha_beta_start_pos(c: &mut Criterion) {
             format!("alpha beta depth {} start position", depth).as_str(),
             |b| {
                 b.iter(|| {
+                    let timer = Timer::new(10000);
                     let mut tt = new_tt_table();
                     alpha_beta(
                         board.clone(),
@@ -33,6 +34,7 @@ fn alpha_beta_start_pos(c: &mut Criterion) {
                         &mut tt,
                         true,
                         &None,
+                        &timer
                     )
                 })
             },
@@ -47,6 +49,7 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
             format!("alpha beta depth {} take queen", depth).as_str(),
             |b| {
                 b.iter(|| {
+                    let timer = Timer::new(10000);
                     let mut tt = new_tt_table();
                     alpha_beta(
                         board.clone(),
@@ -57,6 +60,7 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
                         &mut tt,
                         true,
                         &None,
+                        &timer
                     )
                 })
             },
@@ -67,6 +71,7 @@ fn alpha_beta_queen_take(c: &mut Criterion) {
 fn play_game(mut board: Board, depth: u8) {
     while !board.checkmate() && board.rule_50() != 50 && !board.stalemate() && board.is_ok_quick() {
         let mut tt = new_tt_table();
+        let timer = Timer::new(10000);
         let (mv, _score) = alpha_beta(
             board.clone(),
             depth,
@@ -76,6 +81,7 @@ fn play_game(mut board: Board, depth: u8) {
             &mut tt,
             true,
             &None,
+            &timer
         );
         board.apply_move(mv);
     }
